@@ -4,7 +4,7 @@
 // @version      1.6
 // @description  Automatically clicks the "Delete All My Pending Appointments" button with a 5-second delay, changes its text, and removes the "No, I will Continue with current appointment" button. Displays a message only when the script is working.
 // @author       You
-// @match        https://belarus.blsspainglobal.com/Global/*
+// @match        https://appointment.thespainvisa.com/Global/*
 // @grant        none
 // ==/UserScript==
 
