@@ -4,8 +4,7 @@
 // @version      2025-02-08
 // @description  Уведомления о записях с мобильной адаптацией
 // @author       You
-// @match        https://appointment.blsspainrussia.ru/Global/payment/PaymentResponse*
-// @match        https://belarus.blsspainglobal.com/Global/payment/PaymentResponse*
+// @match        https://appointment.thespainvisa.com/Global/payment/PaymentResponse*
 // @grant        none
 // ==/UserScript==
 
