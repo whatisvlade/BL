@@ -90,8 +90,8 @@
         const notification = document.createElement('div');
         notification.className = 'success-notification';
         notification.innerHTML = `
-            <h3>✅ Запись прошла успешно!</h3>
-            <p>Можете закрывать браузер<br>Все подробности у вашего менеджера</p>
+            <h3>✅ Appointment successful!</h3>
+            <p>You can close the browser<br>All details are with your manager</p>
         `;
 
         document.body.appendChild(notification);
