@@ -4,7 +4,7 @@
 // @version      2025-06-03
 // @description  Логирование запросов, UI-оповещения и отправка статусов в Telegram
 // @author       You
-// @match        https://belarus.blsspainglobal.com/Global/Appointment/ApplicantSelection*
+// @match        https://appointment.thespainvisa.com/Global/Appointment/ApplicantSelection*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=blsspainrussia.ru
 // @grant        GM_xmlhttpRequest
 // @connect      api.telegram.org
