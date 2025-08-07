@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         visa_type_selector
 // @namespace    http://tampermonkey.net/
-// @version      2025-03-13
-// @description  Select dropdowns, handle modals (NationalVisaModal hide manually, PremiumTypeModel waits with delay and Accept). Submit after all dropdowns selected.
+// @version      2025-08-07
+// @description  Выбирает значения в выпадающих списках. Категория Premium или Normal выбирается по чётности текущей минуты. Обрабатывает модальные окна. Нажимает Submit после выбора.
 // @author       You
 // @match        https://appointment.thespainvisa.com/Global/Appointment/VisaType*
 // @grant        none
@@ -10,16 +10,16 @@
 
 $(document).ready(async function () {
   observeNationalVisaModal();
-  await waitForPremiumAccept(); // обработка модалки сразу при загрузке
-  await runScript();            // основной выбор dropdown'ов
+  await waitForPremiumAccept(); // обработка модалки при загрузке
+  await runScript();            // основной сценарий
 });
 
-// Наблюдение за NationalVisaModal (скрытие вручную)
+// Закрытие NationalVisaModal вручную
 function observeNationalVisaModal() {
   const observer = new MutationObserver(() => {
     const $modal = $('#NationalVisaModal.modal.show');
     if ($modal.length && $modal.is(':visible')) {
-      console.log('На экране — NationalVisaModal. Закрытие вручную.');
+      console.log('Закрываем NationalVisaModal вручную.');
       $modal.removeClass('show').addClass('fade').css('display', 'none');
       $('body').removeClass('modal-open');
       $('.modal-backdrop').remove();
@@ -34,26 +34,24 @@ function observeNationalVisaModal() {
   });
 }
 
-// Ожидание появления и закрытия PremiumTypeModel с задержкой и нажатием Accept
+// Ожидание модалки PremiumTypeModel и нажатие Accept
 function waitForPremiumAccept(timeout = 10000, delayBeforeClick = 1000) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     let resolved = false;
 
     const observer = new MutationObserver(() => {
-      const $premiumModal = $('#PremiumTypeModel.modal.show');
-      if ($premiumModal.length && $premiumModal.is(':visible')) {
-        console.log('Появилось окно PremiumTypeModel');
-
-        const $acceptBtn = $premiumModal.find('.modal-footer .btn-success');
-        if ($acceptBtn.length) {
+      const $modal = $('#PremiumTypeModel.modal.show');
+      if ($modal.length && $modal.is(':visible')) {
+        console.log('Обнаружено окно PremiumTypeModel');
+        const $accept = $modal.find('.modal-footer .btn-success');
+        if ($accept.length) {
           setTimeout(() => {
-            $acceptBtn.click();
-            console.log('Кнопка Accept нажата после задержки ' + delayBeforeClick + 'мс');
+            $accept.click();
+            console.log('Кнопка Accept нажата через ' + delayBeforeClick + 'мс');
           }, delayBeforeClick);
         }
       }
 
-      // Когда модалка исчезла — продолжаем
       if ($('#PremiumTypeModel').length && !$('#PremiumTypeModel').hasClass('show')) {
         if (!resolved) {
           resolved = true;
@@ -74,18 +72,17 @@ function waitForPremiumAccept(timeout = 10000, delayBeforeClick = 1000) {
       if (!resolved) {
         resolved = true;
         observer.disconnect();
-        console.warn("PremiumTypeModel не появился за отведённое время");
-        resolve(); // продолжаем даже без окна
+        console.warn("Окно PremiumTypeModel не появилось за " + timeout + "мс");
+        resolve();
       }
     }, timeout);
   });
 }
 
-// --- Вспомогательные функции ---
-function waitForElementPromise(selector, timeout) {
+// Вспомогательные функции ожидания
+function waitForElementPromise(selector, timeout = 0) {
   return new Promise((resolve, reject) => {
-    timeout = timeout || 0;
-    const intervalTime = 0;
+    const intervalTime = 10;
     let elapsed = 0;
     const timer = setInterval(() => {
       const $elem = $(selector);
@@ -96,7 +93,7 @@ function waitForElementPromise(selector, timeout) {
       elapsed += intervalTime;
       if (elapsed >= timeout) {
         clearInterval(timer);
-        reject(new Error('Timeout waiting for element: ' + selector));
+        reject(new Error('Таймаут ожидания элемента: ' + selector));
       }
     }, intervalTime);
   });
@@ -138,6 +135,7 @@ function waitForDropdownToClose($dropdown, timeout = 30) {
   });
 }
 
+// Выбор из dropdown'ов
 async function openDropdownAndSelect(optionGroup) {
   try {
     const $dropdownRaw = await waitForElementPromise('.k-widget.k-dropdown[aria-expanded="false"]:visible:not(.processed)', 30);
@@ -150,7 +148,7 @@ async function openDropdownAndSelect(optionGroup) {
       await waitForDropdownToOpen($dropdown, 30);
 
       const ownsId = $dropdown.attr('aria-owns');
-      if (!ownsId) throw new Error("Атрибут aria-owns не найден");
+      if (!ownsId) throw new Error("Нет aria-owns у dropdown");
 
       const $listContainerRaw = await waitForElementPromise('#' + ownsId, 30);
       const $listContainer = $listContainerRaw.first();
@@ -165,7 +163,7 @@ async function openDropdownAndSelect(optionGroup) {
         }
       });
 
-      if (!selectedOption) throw new Error('Не найдено значение в dropdown');
+      if (!selectedOption) throw new Error('Не найдено подходящее значение');
 
       $dropdown.find('.k-dropdown-wrap').first().click();
       await waitForDropdownToClose($dropdown, 30);
@@ -180,19 +178,23 @@ async function openDropdownAndSelect(optionGroup) {
   }
 }
 
-// --- Главный сценарий ---
+// Главный сценарий
 async function runScript() {
   try {
+    const currentMinute = new Date().getMinutes();
+    const visaCategory = currentMinute % 2 === 0 ? '{{VISA_TYPE_1}}' : '{{VISA_TYPE_2}}';
+    console.log(`Минутa: ${currentMinute} — выбрана категория: ${visaCategory}`);
+
     const options = [
-      ['Islamabad', 'Premium'],
-      ['Islamabad', 'National Visa/ Long Term Visa'],
-      ['National Visa/ Long Term Visa', 'Other National   Visa'],
-      ['Other National   Visa', 'Premium']
+      ['{{CITY}}', visaCategory],
+      ['{{CITY}}', 'National Visa/ Long Term Visa', '{{CATEGORY}}'],
+      ['National Visa/ Long Term Visa', visaCategory, '{{CATEGORY}}'], // <- сюда подставляется Premium или Normal
+      ['{{ CATEGORY }}', visaCategory]
     ];
 
     for (const optionGroup of options) {
       await openDropdownAndSelect(optionGroup);
-      await waitForPremiumAccept(); // ждём, пока окно Accept исчезнет (или не появится)
+      await waitForPremiumAccept();
     }
 
     const $btnSubmitRaw = await waitForElementPromise('#btnSubmit', 100);
