@@ -37,15 +37,15 @@
     }
 
     async function checkInternetAndRedirect() {
-        showMessage('⏳ Проверка соединения через 9 секунд...', 'orange');
+        showMessage('⏳ Checking connection in 9 seconds...', 'orange');
         setTimeout(() => {
-            showMessage('⏳ Идет проверка интернета...', 'orange');
+            showMessage('⏳ Checking internet connection...', 'orange');
             const check = async () => {
                 for (const url of TEST_URLS) {
                     try {
                         const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
                         if (res.ok) {
-                            showMessage('✅ Интернет есть. Перенаправляем...', 'green');
+                            showMessage('✅ Internet is available. Redirecting...', 'green');
                             setTimeout(() => {
                                 window.location.href = 'https://appointment.thespainvisa.com/Global/account/Login';
                                 hideMessage();
@@ -73,8 +73,8 @@
             alertElement.textContent.trim() === 'All your pending appointments are removed' &&
             button
         ) {
-            showMessage('Скрипт работает: ожидаем интернет-соединение...');
-            alertElement.textContent = 'ПЕРЕНАПРАВЛЯЕМ НА СТРАНИЦУ ВХОДА, СМЕНИТЕ АЙПИ';
+            showMessage('Script is running: waiting for internet connection...');
+            alertElement.textContent = 'CHANGE YOUR IP';
             button.style.display = 'none';
             checkInternetAndRedirect();
             observer.disconnect();
