@@ -89,11 +89,11 @@ async def choose_city(cb: CallbackQuery, state: FSMContext):
     
     # Определяем категории виз в зависимости от города
     if city_code == "Islamabad":
-        categories = [("Work Visa", "Work Visa"), ("Other National Visa", "Other National Visa")]
+        categories = [("Work Visa", "Work Visa"), ("Other National   Visa", "Other National   Visa")]
     elif city_code == "Karachi":
         categories = [("National Visa", "National Visa")]
     elif city_code == "Lahore":
-        categories = [("Work Visa", "Work Visa"), ("Other National Visa", "Other National Visa")]
+        categories = [("Work Visa", "Work Visa"), ("Other National   Visa", "Other National   Visa")]
     
     kb = InlineKeyboardBuilder()
     for code, title in categories:
