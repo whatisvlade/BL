@@ -11,14 +11,13 @@
 // @match        https://appointment.thespainvisa.com/Global/account/*
 // @match        https://appointment.thespainvisa.com/Global/Account/*
 // @grant        none
-// @run-at       document-idle
 // ==/UserScript==
 
 (function () {
     'use strict';
 
     // Впиши свой email
-    const EMAIL = 'susannekeltner1998@forisfammails.ru';
+    const EMAIL = '{{ EMAIL }}';
 
     // Автоввод email и клик по Verify
     function insertEmailAndClickVerify() {
@@ -42,7 +41,7 @@
                 setTimeout(() => {
                     verifyButton.click();
                     console.log('Клик по кнопке Verify');
-                }, 1000);
+                }, 3000);
             } else {
                 console.log('Кнопка Verify не найдена!');
             }
