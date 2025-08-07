@@ -83,17 +83,17 @@
             let telegramMessage = '';
 
             if (status === 200) {
-                message = "ФОТО ЗАГРУЖЕНО УСПЕШНО.";
+                message = "PHOTO UPLOADED SUCCESSFULLY";
                 showMessage(message, "green");
 
             } else if (status === 429) {
-                message = "УПС. АЙПИ ЗАБЛОКИРОВАН. ПЕРЕХОД НА СТРАНИЦУ ВХОДА.";
+                message = "OOPS. IP BLOCKED. REDIRECTING TO LOGIN PAGE";
                 showMessage(message, "red");
                 setTimeout(() => {
-                    window.location.href = "https://belarus.blsspainglobal.com/Global/account/Login?returnUrl=%2FGlobal%2Fappointment%2Fnewappointment&err=K7LYPi%2FpJtiLxj0JgYMBPVTdQ5hDdq9IVd7ALDT6sMo%3D";
+                    window.location.href = "https://appointment.thespainvisa.com/Global/account/Login";
                 }, 2000);
             } else {
-                message = "УПС. ПРОБУЕМ ДРУГОЕ ФОТО, СТРАНИЦА САМА ОБНОВИТСЯ.";
+                message = "OOPS. TRYING ANOTHER PHOTO, PAGE WILL REFRESH AUTOMATICALLY.";
                 telegramMessage = `⚠️${USER_NAME} ФОТО НЕ ЗАГРУЗИЛОСЬ`;
                 showMessage(message, "orange");
                 sendTelegramMessage(telegramMessage);
