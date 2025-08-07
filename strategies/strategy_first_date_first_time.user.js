@@ -93,7 +93,7 @@
         }
 
         console.log("Запущен таймер проверки оверлея (5 секунд)");
-        showMessage("Ожидание загрузки слотов времени...", "blue");
+        showMessage("Waiting for time slots to load...", "blue");
 
         // Устанавливаем новый таймер на 5 секунд
         overlayCheckTimer = setTimeout(() => {
@@ -111,12 +111,12 @@
             const areSlotsAvailable = checkIfTimeSlotsAvailable();
 
             if (!isOverlayHidden || !areSlotsAvailable) {
-                showMessage("Проблема с загрузкой данных. Перенаправление на страницу входа...", "orange");
+                showMessage("Problem loading data. Redirecting to login page...", "orange");
                 console.log("Оверлей не скрылся или слоты времени не появились в течение 5 секунд");
                 redirectToLoginPage();
             } else {
                 console.log("Оверлей скрыт и слоты времени доступны, продолжаем выполнение");
-                showMessage("Данные загружены успешно!", "green");
+                showMessage("Data loaded successfully!", "green");
             }
         }, 5000);
     }
@@ -473,7 +473,7 @@
         // Через 25 секунд проверяем, если дата выбрана, но слоты не появились — редирект
         setTimeout(() => {
             if (dateSelected && !checkIfTimeSlotsAvailable()) {
-                showMessage("Слоты времени не появились. Перенаправление на страницу входа...", "red");
+                showMessage("Time slots did not appear. Redirecting to login page...", "red");
                 console.log("openAndSelectDateAndSlot: 25 секунд истекли, слотов нет");
                 redirectToLoginPage();
             }
@@ -491,17 +491,17 @@
         if (resource.includes(targetUrl)) {
             console.log("fetch -> ответ с кодом", response.status, "для", resource);
             if (response.status === 200) {
-                showMessage("Дата выбрана успешно!", "green");
+                showMessage("Date selected successfully!", "green");
             } else if (response.status === 429) {
-                showMessage("АЙПИ ЗАБЛОКИРОВАН. Переход на страницу входа...", "orange");
+                showMessage("IP BLOCKED. Redirecting to login page...", "orange");
                 console.error("fetch ошибка 429 для", resource);
                 setTimeout(redirectToLoginPage, 2000);
             } else if (response.status === 500 || response.status === 502) {
-                showMessage("Ошибка сервера, переход на страницу входа", "red");
+                showMessage("Server error, redirecting to login page", "red");
                 console.error("fetch ошибка сервера", response.status, "для", resource);
                 setTimeout(redirectToLoginPage, 2000);
             } else {
-                showMessage("Произошла ошибка, переход на страницу входа", "red");
+                showMessage("An error occurred, redirecting to login page", "red");
                 console.error("fetch ошибка", response.status, "для", resource);
                 setTimeout(redirectToLoginPage, 2000);
             }
@@ -519,17 +519,17 @@
             if (url.includes(targetUrl) && this.readyState === 4) {
                 console.log("XHR -> ответ с кодом", this.status, "для", url);
                 if (this.status === 200) {
-                    showMessage("Дата выбрана успешно!", "green");
+                    showMessage("Date selected successfully!", "green");
                 } else if (this.status === 429) {
-                    showMessage("АЙПИ ЗАБЛОКИРОВАН. Переход на страницу входа...", "orange");
+                    showMessage("IP BLOCKED. Redirecting to login page...", "orange");
                     console.error("XHR ошибка 429 для", url);
                     setTimeout(redirectToLoginPage, 2000);
                 } else if (this.status === 500 || this.status === 502) {
-                    showMessage("Ошибка сервера, переход на страницу входа", "red");
+                    showMessage("Server error, redirecting to login page", "red");
                     console.error("XHR ошибка сервера", this.status, "для", url);
                     setTimeout(redirectToLoginPage, 2000);
                 } else {
-                    showMessage("Произошла ошибка, переход на страницу входа", "red");
+                    showMessage("An error occurred, redirecting to login page", "red");
                     console.error("XHR ошибка", this.status, "для", url);
                     setTimeout(redirectToLoginPage, 2000);
                 }
@@ -542,3 +542,4 @@
     openAndSelectDateAndSlot();
 
 })();
+
