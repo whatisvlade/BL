@@ -75,8 +75,8 @@
     try {
      const excludedUrls = [
           // Внутренние запросы сайта BLS
-          "https://belarus.blsspainglobal.com/assets/images",
-          "https://belarus.blsspainglobal.com/assets/videos",
+          "https://appointment.thespainvisa.com/assets/images",
+          "https://appointment.thespainvisa.com/assets/videos",
           "/Global/appointment/UploadApplicantPhoto",
           "/Global/appointment/GetAvailableSlotsByDate",
 
@@ -110,23 +110,23 @@
       if (status === 200) {
         if (!isForm && !isResource) {
           const color = successColors[method] || "green";
-          showMessage(`УСПЕШНО (${method}): ${url}`, color);
+          showMessage(`SUCCESS (${method}): ${url}`, color);
         }
       } else if (status === 429) {
-        showMessage(`Ошибка, перенаправляем на страницу входа`, "red");
+        showMessage(`Error occurred, redirecting to login page`, "red");
         setTimeout(() => {
           window.location.href = "https://appointment.thespainvisa.com/Global/account/Login";
         }, 2000);
       } else if ([502, 500, 403, 400].includes(status)) {
-        showMessage(`Ошибка, обновляем страницу через 2 секунды`, "red");
+        showMessage(`Error occurred, reloading the page in 2 seconds`, "red");
         setTimeout(() => {
           location.reload();
         }, 2000);
       } else {
-        showMessage(`ОШИБКА: ${method} ${url} (Статус: ${status})`, "red");
+        showMessage(`Error: ${method} ${url} (Статус: ${status})`, "red");
       }
     } catch (error) {
-      showMessage("Ошибка при обработке запроса", "red");
+      showMessage("Error processing the request", "red");
     }
   }
 
@@ -168,7 +168,7 @@
     const form = event.target;
     const method = form.method.toUpperCase() || "GET";
     const action = form.action || window.location.href;
-    showMessage(`ФОРМА (${method}): ${action}`, "teal");
+    showMessage(`FORM (${method}): ${action}`, "teal");
 
     // Логирование статуса отправки формы
     const formStatus = form.checkValidity() ? 200 : 400; // Пример статуса
@@ -183,7 +183,7 @@
       (event) => {
         if (event.target.tagName.toLowerCase() === type) {
           const url = event.target.src || event.target.href;
-          showMessage(`ОШИБКА РЕСУРСА: ${url}`, "red");
+          showMessage(`RESOURCE ERROR: ${url}`, "red");
           logRequest("LOAD", url, 404, false, true); // Указываем, что это ресурс
         }
       },
@@ -195,7 +195,7 @@
       (event) => {
         if (event.target.tagName.toLowerCase() === type) {
           const url = event.target.src || event.target.href;
-          showMessage(`РЕСУРС ЗАГРУЖЕН: ${url}`, "green");
+          showMessage(`RESOURCE LOADED: ${url}`, "green");
           logRequest("LOAD", url, 200, false, true); // Указываем, что это ресурс
         }
       },
