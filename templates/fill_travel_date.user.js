@@ -381,4 +381,5 @@
     replaceOtpAlertText();
     setInterval(replaceOtpAlertText, 1000);
 
+
 })();
