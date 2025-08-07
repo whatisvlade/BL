@@ -111,7 +111,7 @@
 
         const btn = document.createElement('button');
         btn.id = 'get-mail-code-btn';
-        btn.textContent = 'Запросить код';
+        btn.textContent = 'Request Code';
         btn.style.position = 'fixed';
         btn.style.left = '50%';
         btn.style.bottom = '32px';
@@ -132,7 +132,7 @@
 
         btn.onclick = async () => {
             btn.disabled = true;
-            btn.textContent = 'Запрос...';
+            btn.textContent = 'Requesting...';
             try {
                 const resp = await fetch(apiUrl, {
                     method: 'POST',
@@ -157,19 +157,19 @@
                 }
                 if (codeOk) {
                     showPopupCode(code, timeMsg);
-                    showNotification('Код получен!');
+                    showNotification('Code received!');
                 } else {
-                    await sendOtpTgRequest('нет кода или устарел');
-                    showPopupMsg('Код подтверждения не пришел, обратитесь к менеджеру', timeMsg);
-                    showNotification('Нет свежего кода');
+                    await sendOtpTgRequest('no code or expired');
+                    showPopupMsg('OTP code not received, please contact your manager', timeMsg);
+                    showNotification('No valid code found');
                 }
             } catch (e) {
                 await sendOtpTgRequest('ошибка запроса');
-                showPopupMsg('Ошибка, обратитесь к менеджеру', '');
-                showNotification('Ошибка');
+                showPopupMsg('An error occurred, please contact your manager', '');
+                showNotification('Error');
             }
             btn.disabled = false;
-            btn.textContent = 'Запросить код';
+            btn.textContent = 'Request Code';
         };
 
         document.body.appendChild(btn);
@@ -239,7 +239,7 @@
         }
         let dateHtml = dateStr ? `<div style="font-size:12px;color:#555;margin-bottom:4px;">${dateStr}</div>` : '';
         box.innerHTML = dateHtml +
-            `<div style="margin-bottom:4px;">Ваш код подтверждения:</div>
+            `<div style="margin-bottom:4px;">Your OTP code:</div>
              <div style="font-size:21px;letter-spacing:5px;">${code}</div>`;
         const close = document.createElement('button');
         close.textContent = '✕';
@@ -310,7 +310,7 @@
     function replaceOtpAlertText() {
         document.querySelectorAll('.alert.alert-warning.text-center').forEach(div => {
             if (/An OTP has been sent to your registered email/i.test(div.textContent)) {
-                div.innerHTML = 'ВСТАВЬТЕ КОД ОТП ИЗ 6 ЦИФР <span class="required">*</span>';
+                div.innerHTML = 'ENTER THE 6-DIGIT OTP CODE <span class="required">*</span>';
             }
         });
     }
@@ -369,8 +369,8 @@
             li &&
             /Please enter correct email OTP/i.test(li.textContent)
         ) {
-            sendOtpTgRequest('неверный код ОТП');
-            showNotification('Отправлено в Telegram: ошибка кода ОТП');
+            sendOtpTgRequest('invalid OTP code');
+            showNotification('Sent to Telegram: OTP code error');
         }
     }
 
@@ -383,3 +383,4 @@
 
 
 })();
+
