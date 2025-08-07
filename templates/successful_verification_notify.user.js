@@ -4,7 +4,7 @@
 // @version      2025-02-08
 // @description  try to take over the world!
 // @author       You
-// @match        https://belarus.blsspainglobal.com/Global/Appointment/Payment*
+// @match        https://appointment.thespainvisa.com/Global/Appointment/Payment*
 // @grant        none
 // ==/UserScript==
 
