@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      0.1
 // @description  Заменяет текст и обновляет страницу
-// @match        https://belarus.blsspainglobal.com/*
+// @match        https://appointment.thespainvisa.com/*
 // @grant        none
 // ==/UserScript==
 
