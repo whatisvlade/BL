@@ -61,12 +61,12 @@ class Form(StatesGroup):
 # ───────────────────────────────────────────────────────────
 @rt.message(CommandStart())
 async def cmd_start(m: Message, state: FSMContext):
-    await state.update_data(country="Россия")
+    await state.update_data(country="Pakistan")
     kb = InlineKeyboardBuilder()
     for code, title in [
-        ("SPB", "Санкт-Петербург"),
-        ("Moscow", "Москва"),
-        ("Nizhny", "Нижний Новгород")
+        ("Islamabad", "Islamabad"),
+        ("Karachi", "Karachi"),
+        ("Lahore", "Lahore")
     ]:
         kb.button(text=title, callback_data=code)
     kb.adjust(2)
@@ -76,7 +76,7 @@ async def cmd_start(m: Message, state: FSMContext):
 # ───────────────────────────────────────────────────────────
 # Обработка города (Россия)
 # ───────────────────────────────────────────────────────────
-@rt.callback_query(Form.city, F.data.in_(["SPB", "Moscow", "Nizhny"]))
+@rt.callback_query(Form.city, F.data.in_(["Islamabad", "Karachi", "Lahore"]))
 async def choose_city(cb: CallbackQuery, state: FSMContext):
     mapping = {
         "Islamabad": "Islamabad",
