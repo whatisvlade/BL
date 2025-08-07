@@ -207,9 +207,9 @@ async def preview(cb: CallbackQuery, state: FSMContext):
     visa = {"normal": "Обычная", "premium": "Премиум", "random": "Рандомно"}[d["visa_type"]]
     forbid = "нет" if d["forbidden_dates"].strip() == "-" else d["forbidden_dates"]
     city = d.get("city", "")
-    country_city = f"Россия – {city}"
+    country_city = f"Pakistan – {city}"
 
-    text = (
+  text = (
         "<b>Проверьте данные:</b>\n"
         f"Страна/город: {country_city}\n"
         f"Категория визы: {d.get('visa_category', 'не указана')}\n"
@@ -235,17 +235,17 @@ async def preview(cb: CallbackQuery, state: FSMContext):
 # ───────────────────────────────────────────────────────────
 # Генерация скриптов и отправка архива
 # ───────────────────────────────────────────────────────────
-@rt.callback_query(Form.confirm, F.data == "confirm_generate")
+@rt.callback_query(Form.confirm, F.data=="confirm_generate")
 async def generate(cb: CallbackQuery, state: FSMContext):
     await cb.answer("Генерирую скрипты…")
     d = await state.get_data()
-    vt1 = 'Normal' if d['visa_type'] == 'normal' else 'Premium'
-    vt2 = 'Normal' if d['visa_type'] != 'premium' else 'Premium'
-    dirs = DIRS["Россия"]
-    strat_file = os.path.join(dirs[1], f"strategy_{d['strategy']}.js")
+    vt1 = 'Normal' if d['visa_type']=='normal' else 'Premium'
+    vt2 = 'Normal' if d['visa_type']!='premium' else 'Premium'
+    dirs = d['selected_dirs']
+    strat_file = os.path.join(dirs['STRATEGIES_DIR'], f"strategy_{d['strategy']}.js")
     if not os.path.exists(strat_file):
         return await cb.message.answer("❌ Стратегия не найдена")
-    forbidden_js = ",".join(f"'{x.strip()}'" for x in d['forbidden_dates'].split(',') if x.strip()) if d['forbidden_dates'].strip() != '-' else ""
+    forbidden_js = ",".join(f"'{x.strip()}'" for x in d['forbidden_dates'].split(',') if x.strip()) if d['forbidden_dates'].strip()!='-' else ""
     mapping = {
         'START_DATE': d['start_day'],
         'END_DATE': d['end_day'],
@@ -267,24 +267,20 @@ async def generate(cb: CallbackQuery, state: FSMContext):
         txt = re.sub(r"{{\s*([A-Z_]+)\s*}}", repl, open(strat_file, encoding='utf-8').read())
         open(os.path.join(tmp, os.path.basename(strat_file)), 'w', encoding='utf-8').write(txt)
         # Visa type
-        visa_type_dir = dirs[3]
-        for root, _, files in os.walk(visa_type_dir):
+        for root,_,files in os.walk(dirs['VISA_TYPE_DIR']):
             for fn in files:
                 c = open(os.path.join(root, fn), encoding='utf-8').read()
                 c = re.sub(r"{{\s*CITY\s*}}", mapping['CITY'], c)
                 c = re.sub(r"{{\s*VISA_TYPE_1\s*}}", mapping['VISA_TYPE_1'], c)
                 c = re.sub(r"{{\s*VISA_TYPE_2\s*}}", mapping['VISA_TYPE_2'], c)
-                c = re.sub(r"{{\s*CATEGORY\s*}}", mapping['CATEGORY'], c)
                 open(os.path.join(tmp, fn), 'w', encoding='utf-8').write(c)
         # Шаблоны
-        templates_dir = dirs[0]
-        for root, _, files in os.walk(templates_dir):
+        for root,_,files in os.walk(dirs['TEMPLATES_DIR']):
             for fn in files:
                 t = re.sub(r"{{\s*([A-Z_]+)\s*}}", repl, open(os.path.join(root, fn), encoding='utf-8').read())
                 open(os.path.join(tmp, fn), 'w', encoding='utf-8').write(t)
         # Статика
-        static_dir = dirs[2]
-        for root, _, files in os.walk(static_dir):
+        for root,_,files in os.walk(dirs['STATIC_BASE_DIR']):
             for fn in files:
                 shutil.copy(os.path.join(root, fn), os.path.join(tmp, fn))
         # Архив и отправка
@@ -303,7 +299,7 @@ async def generate(cb: CallbackQuery, state: FSMContext):
 # ───────────────────────────────────────────────────────────
 # Рестарт
 # ───────────────────────────────────────────────────────────
-@rt.callback_query(F.data == "restart")
+@rt.callback_query(F.data=="restart")
 async def restart(cb: CallbackQuery, state: FSMContext):
     await state.clear()
     await cmd_start(cb.message, state)
