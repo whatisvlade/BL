@@ -79,20 +79,20 @@ async def cmd_start(m: Message, state: FSMContext):
 @rt.callback_query(Form.city, F.data.in_(["SPB", "Moscow", "Nizhny"]))
 async def choose_city(cb: CallbackQuery, state: FSMContext):
     mapping = {
-        "SPB": "St. Petersburg",
-        "Moscow": "Moscow",
-        "Nizhny": "Nizhny Novgorod",
+        "Islamabad": "Islamabad",
+        "Karachi": "Karachi",
+        "Lahore": "Lahore",
     }
     city_code = cb.data
     city_name = mapping[city_code]
     await state.update_data(city=city_name)
     
     # Определяем категории виз в зависимости от города
-    if city_code == "Moscow":
+    if city_code == "Islamabad":
         categories = [("Work Visa", "Work Visa"), ("Other National Visa", "Other National Visa")]
-    elif city_code == "Nizhny":
+    elif city_code == "Karachi":
         categories = [("National Visa", "National Visa")]
-    else:  # SPB
+    elif city_code == "Lahore":
         categories = [("Work Visa", "Work Visa"), ("Other National Visa", "Other National Visa")]
     
     kb = InlineKeyboardBuilder()
