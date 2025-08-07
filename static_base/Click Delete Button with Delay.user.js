@@ -71,10 +71,10 @@
         // Проверяем, найдены ли все необходимые элементы
         if (alertElement && deleteButton && continueButton) {
             // Показываем сообщение, что скрипт работает
-            showMessage('Скрипт работает: отменяем текущую сессию...');
+            showMessage('Script is running: cancelling current session...');
 
             // Изменяем текст сообщения
-            alertElement.innerText = 'ОТМЕНЯЕМ ВАШУ ТЕКУЩУЮ СЕССИЮ ВИДЕО ВЕРИФИКАЦИИ, ТАК КАК К НЕЙ НЕТ ДОСТУПА';
+            alertElement.innerText = 'CANCELLING YOUR CURRENT VIDEO VERIFICATION SESSION DUE TO LACK OF ACCESS';
 
             // Скрываем кнопки
             deleteButton.style.display = 'none';
