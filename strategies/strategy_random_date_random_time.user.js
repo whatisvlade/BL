@@ -90,7 +90,7 @@
     }
 
     console.log("Запущен таймер проверки оверлея (5 секунд)");
-    showMessage("Ожидание загрузки слотов времени...", "blue");
+    showMessage("Waiting for time slots to load...", "blue");
 
     // Устанавливаем новый таймер на 5 секунд
     overlayCheckTimer = setTimeout(() => {
@@ -109,12 +109,12 @@
       const areSlotsAvailable = checkIfTimeSlotsAvailable();
 
       if (!isOverlayHidden || !areSlotsAvailable) {
-        showMessage("Проблема с загрузкой данных. Перенаправление на страницу входа...", "orange");
+        showMessage("Problem loading data. Redirecting to login page...", "orange");
         console.log("Оверлей не скрылся или слоты времени не появились в течение 5 секунд");
         redirectToLoginPage();
       } else {
         console.log("Оверлей скрыт и слоты времени доступны, продолжаем выполнение");
-        showMessage("Данные загружены успешно!", "green");
+        showMessage("Data loaded successfully!", "green");
       }
     }, 5000);
   }
@@ -464,7 +464,7 @@
     // Дополнительная проверка через 10 секунд после запуска скрипта
     setTimeout(() => {
       if (dateSelected && !checkIfTimeSlotsAvailable()) {
-        showMessage("Слоты времени не появились. Перенаправление на страницу входа...", "red");
+        showMessage("Time slots did not appear. Redirecting to login page...", "red");
         console.log("Дополнительная проверка: слоты времени не появились в течение 10 секунд");
         redirectToLoginPage();
       }
@@ -491,24 +491,24 @@
 
       if (response.status === 200) {
         // Если статус 200, показываем сообщение об успехе
-        showMessage("Дата выбрана успешно!", "green");
+        showMessage("Date selected successfully!", "green");
       } else if (response.status === 429) {
         // Если статус 429, показываем сообщение о блокировке и переходим на страницу входа
-        showMessage("АЙПИ ЗАБЛОКИРОВАН. ПЕРЕХОД НА СТРАНИЦУ ВХОДА", "orange");
+        showMessage("IP BLOCKED. Redirecting to login page...", "orange");
         console.error(`Ошибка: код статуса ${response.status} для URL:`, resource);
         setTimeout(() => {
           redirectToLoginPage();
         }, 2000);
       } else if (response.status === 500 || response.status === 502) {
         // Если статус 500 или 502, показываем сообщение об ошибке и переходим на страницу входа
-        showMessage("Ошибка сервера, переход на страницу входа", "red");
+        showMessage("Server error, redirecting to login page", "red");
         console.error(`Ошибка: код статуса ${response.status} для URL:`, resource);
         setTimeout(() => {
           redirectToLoginPage();
         }, 2000);
       } else {
         // Для всех остальных статусов, кроме 200, 429, 500 и 502, показываем сообщение об ошибке
-        showMessage("Произошла ошибка, переход на страницу входа", "red");
+        showMessage("An error occurred, redirecting to login page", "red");
         console.error(`Ошибка: код статуса ${response.status} для URL:`, resource);
         setTimeout(() => {
           redirectToLoginPage();
@@ -535,24 +535,24 @@
 
         if (this.status === 200) {
           // Если статус 200, показываем сообщение об успехе
-          showMessage("Дата выбрана успешно!", "green");
+          showMessage("Date selected successfully!", "green");
         } else if (this.status === 429) {
           // Если статус 429, показываем сообщение о блокировке и переходим на страницу входа
-          showMessage("АЙПИ ЗАБЛОКИРОВАН. ПЕРЕХОД НА СТРАНИЦУ ВХОДА", "orange");
+          showMessage("IP BLOCKED. Redirecting to login page...", "orange");
           console.error(`Ошибка: код статуса ${this.status} для URL:`, url);
           setTimeout(() => {
             redirectToLoginPage();
           }, 2000);
         } else if (this.status === 500 || this.status === 502) {
           // Если статус 500 или 502, показываем сообщение об ошибке и переходим на страницу входа
-          showMessage("Ошибка сервера, переход на страницу входа", "red");
+          showMessage(" Server error, redirecting to login page", "red");
           console.error(`Ошибка: код статуса ${this.status} для URL:`, url);
           setTimeout(() => {
             redirectToLoginPage();
           }, 2000);
         } else {
           // Для всех остальных статусов, кроме 200, 429, 500 и 502, показываем сообщение об ошибке
-          showMessage("Произошла ошибка, переход на страницу входа", "red");
+          showMessage("An error occurred, redirecting to login page", "red");
           console.error(`Ошибка: код статуса ${this.status} для URL:`, url);
           setTimeout(() => {
             redirectToLoginPage();
@@ -569,3 +569,4 @@
   openAndSelectDateAndSlot();
 
 })();
+
