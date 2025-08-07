@@ -4,7 +4,7 @@
 // @version      1.5
 // @description  Перенаправление на вход только при наличии интернета. Запуск проверки через 9 секунд после успеха удаления записей.
 // @author       You
-// @match        https://belarus.blsspainglobal.com/Global/*
+// @match        https://appointment.thespainvisa.com/Global/*
 // @grant        none
 // ==/UserScript==
 
@@ -47,7 +47,7 @@
                         if (res.ok) {
                             showMessage('✅ Интернет есть. Перенаправляем...', 'green');
                             setTimeout(() => {
-                                window.location.href = 'https://belarus.blsspainglobal.com/Global/account/Login?returnUrl=%2FGlobal%2Fappointment%2Fnewappointment&err=K7LYPi%2FpJtiLxj0JgYMBPVTdQ5hDdq9IVd7ALDT6sMo%3D';
+                                window.location.href = 'https://appointment.thespainvisa.com/Global/account/Login';
                                 hideMessage();
                             }, 3000);
                             return true;
