@@ -12,8 +12,8 @@
 (function() {
     'use strict';
 
-    const RUSSIAN_TEXT = '<strong>Произошла ошибка в распознавании, обновляем страницу. ' +
-                         'Если не обновилось — нажмите кнопку «Дом».</strong>';
+    const RUSSIAN_TEXT = '<strong>An error occurred during recognition. Reloading the page. ' +
+                         'If it doesn\'t refresh — click the "Home" button.</strong>';
 
     function checkAndReplace() {
         document.querySelectorAll('div.alert.alert-danger[role="alert"]')
