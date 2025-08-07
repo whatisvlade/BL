@@ -22,90 +22,54 @@
     const CHECK_INTERVAL = 10000;
 
     function isLoginPage() {
-        const currentUrl = window.location.href.toLowerCase();
-        return currentUrl.includes("/global/account/login");
+        return window.location.href.toLowerCase().includes("/global/account/login");
     }
 
-    function replaceText() {
-        const heading = document.querySelector("h1");
+    function handleTooManyRequests(heading) {
+        isActive = true;
+        startObserver();
 
-        if (heading && heading.textContent === "Too Many Requests") {
-            isActive = true;
-            startObserver();
+        heading.innerHTML = `Your IP is blocked. Change it by tapping the airplane mode ✈️ button a couple of times.<br><small style="font-weight: normal;">Через 10 секунд будет перенаправление на страницу входа...</small>`;
 
-            if (isLoginPage()) {
-                heading.textContent = "Ваш айпи адрес в блоке, смените его через пару кликов по кнопке авиа режим и обновите страницу, надо пробовать заново";
-                setTimeout(() => startInternetCheck(), 5000);
-            } else {
-                heading.textContent = "Вы будете перенаправлены на страницу входа через 5 секунд (ИЗ-ЗА БЛОКА АЙПИ)";
-                setTimeout(() => {
-                    window.location.href = "https://appointment.thespainvisa.com/Global/account/Login";
-                    stopObserver();
-                    isActive = false;
-                }, 10000);
+        // Удаляем системный текст
+        const paragraph = document.querySelectorAll("p");
+        paragraph.forEach(p => {
+            if (p.textContent.includes("We have detected excessive requests")) {
+                p.remove();
             }
-        }
+        });
+
+        // Старт проверки соединения
+        setTimeout(() => startInternetCheck(), 10000);
     }
 
-    function removeExcessiveRequestsText() {
-        const paragraph = document.querySelector("p");
-        if (paragraph && paragraph.textContent.includes("We have detected excessive requests from your IP address")) {
-            paragraph.remove();
-        }
-    }
-
-    function removeUnwantedMessages() {
-        if (isActive) {
-            const messageElement = document.getElementById('script-message');
-            if (messageElement) {
-                console.log("Удаляем сообщение, созданное другим скриптом...");
-                messageElement.remove();
+    function waitForTooManyRequests() {
+        const intervalId = setInterval(() => {
+            const h1 = document.querySelector("h1");
+            if (h1 && h1.textContent.trim() === "Too Many Requests") {
+                clearInterval(intervalId);
+                handleTooManyRequests(h1);
             }
-        }
-    }
+        }, 500);
 
-    function startObserver() {
-        if (!observer) {
-            observer = new MutationObserver(() => {
-                if (isActive) {
-                    removeUnwantedMessages();
-                }
-            });
-            observer.observe(document.body, { childList: true, subtree: true });
-            console.log("Наблюдатель запущен.");
-        }
-    }
-
-    function stopObserver() {
-        if (observer) {
-            observer.disconnect();
-            observer = null;
-            console.log("Наблюдатель остановлен.");
-        }
-    }
-
-    function showMessage(text, color = 'green') {
-        let messageElement = document.getElementById('script-message');
-        if (!messageElement) {
-            document.body.insertAdjacentHTML(
-                'afterbegin',
-                `<div id="script-message" style="position: fixed; top: 0; left: 0; width: 100%; background-color: ${color}; color: white; text-align: center; padding: 15px; font-size: 20px; font-weight: bold; z-index: 9999;">${text}</div>`
-            );
-        } else {
-            messageElement.textContent = text;
-        }
+        // Фэйл-сейф: прекратить ожидание через 30 секунд
+        setTimeout(() => clearInterval(intervalId), 30000);
     }
 
     function startInternetCheck() {
-        showMessage('⏳ Проверка соединения...', 'orange');
+        showMessage('⏳ Checking connection...', 'orange');
         const intervalId = setInterval(async () => {
             for (const url of TEST_URLS) {
                 try {
                     const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
                     if (res.ok) {
-                        showMessage('✅ Интернет восстановлен. Обновляем страницу...', 'green');
                         clearInterval(intervalId);
-                        setTimeout(() => location.reload(), 3000);
+                        showMessage('✅ Internet connection restored. Redirecting to login...', 'green');
+                        setTimeout(() => {
+                            window.location.href = "https://appointment.thespainvisa.com/Global/account/Login";
+                            stopObserver();
+                            isActive = false;
+                        }, 3000);
                         return;
                     }
                 } catch (e) {}
@@ -113,6 +77,43 @@
         }, CHECK_INTERVAL);
     }
 
-    replaceText();
-    removeExcessiveRequestsText();
+    function removeUnwantedMessages() {
+        if (isActive) {
+            const messageElement = document.getElementById('script-message');
+            if (messageElement) messageElement.remove();
+        }
+    }
+
+    function startObserver() {
+        if (!observer) {
+            observer = new MutationObserver(() => {
+                if (isActive) removeUnwantedMessages();
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        }
+    }
+
+    function stopObserver() {
+        if (observer) {
+            observer.disconnect();
+            observer = null;
+        }
+    }
+
+    function showMessage(text, color = 'green') {
+        let el = document.getElementById('script-message');
+        if (!el) {
+            document.body.insertAdjacentHTML(
+                'afterbegin',
+                `<div id="script-message" style="position: fixed; top: 0; left: 0; width: 100%; background-color: ${color}; color: white; text-align: center; padding: 15px; font-size: 20px; font-weight: bold; z-index: 9999;">${text}</div>`
+            );
+        } else {
+            el.textContent = text;
+            el.style.backgroundColor = color;
+        }
+    }
+
+    if (window.top === window.self) {
+        waitForTooManyRequests();
+    }
 })();
