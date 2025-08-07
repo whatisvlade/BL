@@ -4,7 +4,7 @@
 // @version      1.4
 // @description  Проверяет наличие текста "Application Temporarily Unavailable", включая iframe, и перезагружает страницу, если текст найден.
 // @author       Ваше имя
-// @match        https://belarus.blsspainglobal.com/*
+// @match        https://appointment.thespainvisa.com/*
 // @grant        none
 // ==/UserScript==
 
