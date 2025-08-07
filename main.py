@@ -33,7 +33,7 @@ dp.include_router(rt)
 BASE_DIR = os.path.dirname(__file__)
 # Наборы путей для разных сценариев
 DIRS = {
-    "Россия": ("templates3", "strategies3", "static_base3", "visa_type3"),
+    "Россия": ("templates", "strategies", "static_base", "visa_type"),
 }
 DIRS = {k: tuple(os.path.join(BASE_DIR, p) for p in v) for k, v in DIRS.items()}
 
