@@ -34,7 +34,7 @@ $(document).ready(function () {
             clearInterval(interval);
             callback();
         }
-    }, 500);
+    }, 700);
   }
 
   // Функция для поиска видимого div внутри iframe
@@ -57,7 +57,7 @@ $(document).ready(function () {
                 console.log(text)
 
                 // Заменяем фразу "Please select all boxes with number" на "Выберите картинки с числом"
-                text = text.replace('Please select all boxes with number', 'Выберите картинки с числом');
+                text = text.replace('Please select all boxes with number', 'Waiting for recognition');
 
                 // Заменяем число внутри текста на выделенное
                 const numberMatch = text.match(/\d+/);
