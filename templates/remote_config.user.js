@@ -4,8 +4,8 @@
 // @version      2025-06-16
 // @description  Получение конфигурации ip_blocked с GitHub API без кэша, с редиректом или проверкой интернета. Обработка ошибки 403 (блок).
 // @author       You
-// @match        https://belarus.blsspainglobal.com/Global/appointment/newappointment*
-// @match        https://belarus.blsspainglobal.com/Global/Appointment/NewAppointment*
+// @match        https://appointment.thespainvisa.com/Global/appointment/newappointment*
+// @match        https://appointment.thespainvisa.com/Global/Appointment/NewAppointment*
 // @grant        none
 // ==/UserScript==
 
@@ -26,7 +26,7 @@
 
     function redirectToAppointmentPage() {
         setTimeout(() => {
-            window.location.href = 'https://belarus.blsspainglobal.com/Global/Appointment/NewAppointment';
+            window.location.href = 'https://appointment.thespainvisa.com/Global/Appointment/NewAppointment';
         }, 100);
     }
 
@@ -54,7 +54,7 @@
                 if (res.ok) {
                     showMessage('🔁 Перенаправление...', 'red');
                     setTimeout(() => {
-                        window.location.href = 'https://belarus.blsspainglobal.com/Global/account/Login?returnUrl=%2FGlobal%2Fappointment%2Fnewappointment&err';
+                        window.location.href = 'https://appointment.thespainvisa.com/Global/account/Login';
                     }, 4000);
                     break;
                 }
@@ -94,7 +94,8 @@
             { text: 'Appointment slots are not available', message: 'МЕСТ НЕТ, СМЕНИТЕ АЙПИ', notify: false },
             { text: 'Liveness test is expired', message: 'СЕССИЯ ИСТЕКЛА, СМЕНИТЕ АЙПИ.', notify: false },
             { text: 'The user id is invalid', message: 'СМЕНИТЕ АЙПИ', notify: false },
-            { text: 'Invalid appointment request flow', message: 'СМЕНИТЕ АЙПИ', notify: false }
+            { text: 'Invalid appointment request flow', message: 'СМЕНИТЕ АЙПИ', notify: false },
+            { text: 'Currently, no slots are available for the selected category. Kindly try again after sometime. Thank you for your patience', message: 'СМЕНИТЕ АЙПИ', notify: false }
             
 
         ];
