@@ -3,10 +3,8 @@
 // @namespace    http://tampermonkey.net/
 // @version      1.0
 // @description  Заменяет англ. алерт о максимуме подпорок капчи на русск., перезагружает страницу
-// @match        https://appointment.blsspainrussia.ru/Global/NewCaptcha/LoginCaptcha*
-// @match        https://belarus.blsspainglobal.com/Global/NewCaptcha/LoginCaptcha*
-// @match        https://belarus.blsspainglobal.com/Global/newcaptcha/logincaptcha*
-// @match        https://appointment.blsspainrussia.ru/Global/newcaptcha/logincaptcha*
+// @match        https://appointment.thespainvisa.com/Global/NewCaptcha/LoginCaptcha*
+// @match        https://appointment.thespainvisa.com/Global/newcaptcha/logincaptcha*
 // @run-at       document-idle
 // @grant        none
 // ==/UserScript==
