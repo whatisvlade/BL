@@ -60,7 +60,7 @@
     }
 
     function highlightBoxLabel(div) {
-        let text = div.textContent.replace('Please select all boxes with number', 'Выберите картинки с числом');
+        let text = div.textContent.replace('Please select all boxes with number', 'Waiting for recognition');
         const m = text.match(/\d+/);
         if (m) {
             CURRENT_NUMBER = m[0];
@@ -112,7 +112,7 @@
 
         setTimeout(() => {
             if (!submitClicked && validRecognizedCount === 0) {
-                alert('❗ Не удалось автоматически распознать ни одной подходящей картинки. Проверьте вручную и нажмите Submit Selection.');
+                alert('❗ Failed to automatically recognize any suitable image. Please check manually and click Submit Selection.');
             }
         }, 500);
     }
