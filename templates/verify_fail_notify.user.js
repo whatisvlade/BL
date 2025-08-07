@@ -4,7 +4,7 @@
 // @version      2025-06-03
 // @description  Автоматизация повторной верификации и отправка уведомлений в Telegram
 // @author       You
-// @match        https://belarus.blsspainglobal.com/Global/Appointment/Liveness*
+// @match        https://appointment.thespainvisa.com/Global/Appointment/Liveness*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=blsspainrussia.ru
 // @grant        none
 // ==/UserScript==
