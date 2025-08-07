@@ -118,7 +118,7 @@
         }
         
         h1.style.textAlign = 'center';
-        h1.textContent = 'ПРОИЗОШЕЛ СБОЙ. СТРАНИЦА ОБНОВИТСЯ ЧЕРЕЗ 2 СЕКУНДЫ';
+        h1.textContent = 'AN ERROR OCCURRED. THE PAGE WILL RELOAD IN 2 SECONDS';
 
         // Удаляем весь остальной контент
         const bodyChildren = Array.from(doc.body.children);
