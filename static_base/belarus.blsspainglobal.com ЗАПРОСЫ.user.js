@@ -4,7 +4,7 @@
 // @version      4.5
 // @description  Логирование запросов (XHR, Fetch, формы, ресурсы, WebSocket) и событий навигации с использованием Shadow DOM. Сообщения на всю ширину экрана.
 // @author       Вы
-// @match        https://belarus.blsspainglobal.com/*
+// @match        https://appointment.thespainvisa.com/*
 // @grant        none
 // ==/UserScript==
 
@@ -73,16 +73,33 @@
   // Логирование запросов
   function logRequest(method, url, status, isForm = false, isResource = false) {
     try {
-      const excludedUrls = [
-        "/Global/appointment/UploadApplicantPhoto",
-        "/Global/appointment/GetAvailableSlotsByDate",
-        "api.telegram.org",
-        "data:image/gif;base64",
-        "apipro2.ocr.space/parse/image",
-        "apipro1.ocr.space/parse/image",
-        "data:application/octet-stream;base64",
-        "api.github.com"
-      ];
+     const excludedUrls = [
+          // Внутренние запросы сайта BLS
+          "https://belarus.blsspainglobal.com/assets/images",
+          "https://belarus.blsspainglobal.com/assets/videos",
+          "/Global/appointment/UploadApplicantPhoto",
+          "/Global/appointment/GetAvailableSlotsByDate",
+
+          // Telegram API
+          "api.telegram.org",
+
+          // CAPTCHA и OCR API
+          "apipro2.ocr.space/parse/image",
+          "apipro1.ocr.space/parse/image",
+          "api.apitruecaptcha.org/one/gettext",
+          "api.capmonster.cloud/createTask",
+          "api.capmonster.cloud/getTaskResult",
+
+          // Бинарные и inline-данные
+          "data:image/gif;base64",
+          "data:application/octet-stream;base64",
+
+          // GitHub API (например, загрузка моделей)
+          "api.github.com",
+
+          // IMAP API на Render
+          "firstmail-imap-api.onrender.com/mail"
+     ];
 
       if (excludedUrls.some((excludedUrl) => url.includes(excludedUrl))) {
         return;
@@ -98,7 +115,7 @@
       } else if (status === 429) {
         showMessage(`Ошибка, перенаправляем на страницу входа`, "red");
         setTimeout(() => {
-          window.location.href = "https://belarus.blsspainglobal.com/Global/account/Login?returnUrl=%2FGlobal%2Fappointment%2Fnewappointment&err=K7LYPi%2FpJtiLxj0JgYMBPVTdQ5hDdq9IVd7ALDT6sMo%3D";
+          window.location.href = "https://appointment.thespainvisa.com/Global/account/Login";
         }, 2000);
       } else if ([502, 500, 403, 400].includes(status)) {
         showMessage(`Ошибка, обновляем страницу через 2 секунды`, "red");
