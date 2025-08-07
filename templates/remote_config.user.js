@@ -12,7 +12,6 @@
 (function () {
     'use strict';
 
-    const GITHUB_API_URL = 'https://api.github.com/repos/whatisvlade/control-config/contents/ip-statusRUS.json';
     const USER_NAME = '{{ USER_NAME }}';
     const TELEGRAM_BOT_TOKEN = '7901901530:AAE29WGTOS3s7TBVUmShUEYBkXXPq7Ew1UA';
     const TELEGRAM_CHAT_ID = '{{ TELEGRAM_CHAT_ID }}';
@@ -24,13 +23,7 @@
     const CHECK_INTERVAL = 10000;
     let internetCheckStarted = false;
 
-    function redirectToAppointmentPage() {
-        setTimeout(() => {
-            window.location.href = 'https://appointment.thespainvisa.com/Global/Appointment/NewAppointment';
-        }, 100);
-    }
-
-    function showMessage(text, color = 'green') {
+    function showMessage(text, color = 'red') {
         let messageElement = document.getElementById('script-message');
         if (!messageElement) {
             document.body.insertAdjacentHTML(
@@ -42,17 +35,12 @@
         }
     }
 
-    function hideMessage() {
-        const messageElement = document.getElementById('script-message');
-        if (messageElement) messageElement.remove();
-    }
-
     async function checkInternet() {
         for (const url of TEST_URLS) {
             try {
                 const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
                 if (res.ok) {
-                    showMessage('🔁 Перенаправление...', 'red');
+                    showMessage('🔁 Redirecting to Login...', 'red');
                     setTimeout(() => {
                         window.location.href = 'https://appointment.thespainvisa.com/Global/account/Login';
                     }, 4000);
@@ -66,7 +54,7 @@
         if (!internetCheckStarted) {
             internetCheckStarted = true;
             setTimeout(() => {
-                showMessage('⏳ Проверка интернета...', 'orange');
+                showMessage('⏳ Checking internet connection...', 'orange');
                 setInterval(checkInternet, CHECK_INTERVAL);
             }, 10000);
         }
@@ -84,65 +72,61 @@
         });
     }
 
-    function replaceErrorTexts(isIpBlocked) {
-        const errorMappings = [
-            { text: 'Your network connection has changed during the appointment process. Please log out and try again.', message: 'ПРОИЗОШЛА ОШИБКА, СМЕНИТЕ АЙПИ', notify: true },
-            { text: 'You have reached maximum number of appointments allowed from your account or network.', message: 'ПРОИЗОШЛА ОШИБКА В ЗАПИСИ (БЛОК НА АКК ИЛИ АЙПИ).', notify: true },
-            { text: 'Maximum number of appointments are booked from your given email domain', message: 'ПРОИЗОШЛА ОШИБКА В ЗАПИСИ (БЛОК НА МЫЛО).', notify: true },
-            { text: 'The appointment date and time you selected are already taken by other applicants. Please choose a different date and time.', message: 'ВРЕМЯ УЖЕ ЗАНЯТО ДРУГИМ ЗАЯВИТЕЛЕМ, СМЕНИТЕ АЙПИ', notify: false },
-            { text: 'The appointment request is expired', message: 'СЕССИЯ ПРОСРОЧЕНА, СМЕНИТЕ АЙПИ', notify: false },
-            { text: 'Appointment slots are not available', message: 'МЕСТ НЕТ, СМЕНИТЕ АЙПИ', notify: false },
-            { text: 'Liveness test is expired', message: 'СЕССИЯ ИСТЕКЛА, СМЕНИТЕ АЙПИ.', notify: false },
-            { text: 'The user id is invalid', message: 'СМЕНИТЕ АЙПИ', notify: false },
-            { text: 'Invalid appointment request flow', message: 'СМЕНИТЕ АЙПИ', notify: false },
-            { text: 'Currently, no slots are available for the selected category. Kindly try again after sometime. Thank you for your patience', message: 'СМЕНИТЕ АЙПИ', notify: false }
-            
+    function replaceAllErrors() {
+        const knownErrors = {
+            'Your network connection has changed during the appointment process. Please log out and try again.': 'Network changed — need new IP',
+            'You have reached maximum number of appointments allowed from your account or network.': 'Blocked: Too many appointments from this account or IP',
+            'Maximum number of appointments are booked from your given email domain': 'Blocked: Email domain is blacklisted.',
+        };
 
+        const forcedIPMessages = [
+            'No slots available for selected category, please try later',
+            'Invalid appointment flow, please try again',
+            'Liveness test expired, please retry',
+            'Invalid user ID, please try again',
+            'No appointment slots available, try again later',
+            'Selected time is already taken, please try again',
+            'The appointment date and time you selected are already taken by other applicants. Please choose a different date and time.',
+            'The appointment request is expired',
+            'Currently, no slots are available for the selected category. Kindly try again after sometime. Thank you for your patience'
         ];
 
-        errorMappings.forEach(e => {
-            const element = Array.from(document.querySelectorAll('*')).find(el => el.textContent.trim() === e.text);
-            if (element) {
-                let finalMessage = e.message;
-                if (!isIpBlocked && finalMessage.includes("СМЕНИТЕ АЙПИ")) {
-                    finalMessage = finalMessage.replace("СМЕНИТЕ АЙПИ", "ПРОБУЙТЕ ЕЩЕ");
-                }
-                element.textContent = finalMessage;
-                if (e.notify) {
-                    sendTelegramText(`❗️${USER_NAME} - ${finalMessage}`);
-                }
-                if (isIpBlocked && !e.notify) {
-                    startInternetCheckAfterDelay();
-                } else if (!isIpBlocked && !e.notify) {
-                    redirectToAppointmentPage();
-                }
+        let messageFound = false;
+
+        // Replace known errors
+        for (const [originalText, telegramMsg] of Object.entries(knownErrors)) {
+            const el = Array.from(document.querySelectorAll('*')).find(el => el.textContent.trim() === originalText);
+            if (el) {
+                el.textContent = 'Change your IP address';
+                sendTelegramText(`❗️${USER_NAME} - ${telegramMsg}`);
+                startInternetCheckAfterDelay();
+                messageFound = true;
+                break;
             }
-        });
+        }
+
+        if (messageFound) return;
+
+        // Replace forced IP messages
+        const elForced = Array.from(document.querySelectorAll('*')).find(el =>
+            forcedIPMessages.includes(el.textContent.trim())
+        );
+        if (elForced) {
+            elForced.textContent = 'Change your IP address';
+            startInternetCheckAfterDelay();
+            return;
+        }
+
+        // If any error-like message exists but unknown, still replace and trigger check
+        const errorLikeElement = Array.from(document.querySelectorAll('*')).find(el =>
+            el.textContent.trim().length > 10 && /error|appointment|expired|slot|time/i.test(el.textContent)
+        );
+        if (errorLikeElement) {
+            errorLikeElement.textContent = 'Change your IP address';
+            startInternetCheckAfterDelay();
+        }
     }
 
-    fetch(GITHUB_API_URL, {
-        headers: { 'Accept': 'application/vnd.github.v3.raw' },
-        cache: 'no-store'
-    })
-    .then(res => {
-        if (res.status === 403) {
-            showMessage('⚠️ СМЕНИТЕ АЙПИ', 'red');
-            startInternetCheckAfterDelay();
-            throw new Error('403 GitHub Access Denied');
-        }
-        return res.json();
-    })
-    .then(config => {
-        const isIpBlocked = config.ip_blocked === true;
-        replaceErrorTexts(isIpBlocked);
-        if (!isIpBlocked) redirectToAppointmentPage();
-    })
-    .catch(err => {
-        if (err.message !== '403 GitHub Access Denied') {
-            showMessage('⚠️ СМЕНИТЕ АЙПИ', 'red');
-            startInternetCheckAfterDelay();
-        }
-    });
-
+    replaceAllErrors();
 })();
 
