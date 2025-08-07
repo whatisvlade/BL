@@ -4,7 +4,7 @@
 // @version      2025-06-04
 // @description  Обработка Too Many Requests и проверка соединения на странице входа с автообновлением при восстановлении связи. Работает независимо от регистра в URL (Global/account/Login и т.д.).
 // @author       You
-// @match        https://belarus.blsspainglobal.com/*
+// @match        https://appointment.thespainvisa.com/*
 // @grant        none
 // ==/UserScript==
 
@@ -39,7 +39,7 @@
             } else {
                 heading.textContent = "Вы будете перенаправлены на страницу входа через 5 секунд (ИЗ-ЗА БЛОКА АЙПИ)";
                 setTimeout(() => {
-                    window.location.href = "https://belarus.blsspainglobal.com/Global/account/Login?returnUrl=%2FGlobal%2Fappointment%2Fnewappointment&err=K7LYPi%2FpJtiLxj0JgYMBPVTdQ5hDdq9IVd7ALDT6sMo%3D";
+                    window.location.href = "https://appointment.thespainvisa.com/Global/account/Login";
                     stopObserver();
                     isActive = false;
                 }, 10000);
