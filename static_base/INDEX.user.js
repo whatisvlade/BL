@@ -4,26 +4,29 @@
 // @version      2025-03-12
 // @description  try to take over the world!
 // @author       You
-// @match        https://belarus.blsspainglobal.com/Global/home/index*
+// @match        https://appointment.thespainvisa.com/Global/home/index*
 // @grant        none
 // ==/UserScript==
 
 (function() {
     'use strict';
 
-    // Проверяем, загружен ли jQuery
+    var targetUrl = 'https://appointment.thespainvisa.com/Global/Appointment/NewAppointment';
+
+    function redirect() {
+        if (window.location.href !== targetUrl) {
+            window.location.href = targetUrl;
+        }
+        // После перехода больше ничего не делаем — чтобы не было лишних ошибок
+    }
+
     if (typeof jQuery !== 'undefined') {
         $(document).ready(function() {
-            setTimeout(function() {
-                window.location.href = 'https://belarus.blsspainglobal.com/Global/Appointment/NewAppointment'; // Переход по прямой ссылке
-            }, 100); // Задержка 10 мс для выполнения перехода
+            setTimeout(redirect, 1000); // 500 мс задержка
         });
     } else {
-        // Если jQuery не доступен, используем чистый JavaScript
         window.addEventListener('load', function() {
-            setTimeout(function() {
-                window.location.href = 'https://belarus.blsspainglobal.com/Global/Appointment/NewAppointment'; // Переход по прямой ссылке
-            }, 100); // Задержка 10 мс для выполнения перехода
+            setTimeout(redirect, 1000);
         });
     }
 })();
