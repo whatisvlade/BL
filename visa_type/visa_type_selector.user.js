@@ -189,7 +189,7 @@ async function runScript() {
       ['{{CITY}}', visaCategory],
       ['{{CITY}}', 'National Visa/ Long Term Visa', '{{CATEGORY}}'],
       ['National Visa/ Long Term Visa', visaCategory, '{{CATEGORY}}'], // <- сюда подставляется Premium или Normal
-      ['{{ CATEGORY }}', visaCategory]
+      ['{{CATEGORY}}', visaCategory]
     ];
 
     for (const optionGroup of options) {
@@ -205,3 +205,4 @@ async function runScript() {
     console.error("Ошибка в runScript:", error);
   }
 }
+
