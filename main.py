@@ -273,6 +273,7 @@ async def generate(cb: CallbackQuery, state: FSMContext):
                 c = re.sub(r"{{\s*CITY\s*}}", mapping['CITY'], c)
                 c = re.sub(r"{{\s*VISA_TYPE_1\s*}}", mapping['VISA_TYPE_1'], c)
                 c = re.sub(r"{{\s*VISA_TYPE_2\s*}}", mapping['VISA_TYPE_2'], c)
+                c = re.sub(r"{{\s*CATEGORY\s*}}", mapping['CATEGORY'], c)
                 open(os.path.join(tmp, fn), 'w', encoding='utf-8').write(c)
         # Шаблоны
         for root,_,files in os.walk(dirs['TEMPLATES_DIR']):
