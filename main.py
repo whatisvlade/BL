@@ -209,7 +209,7 @@ async def preview(cb: CallbackQuery, state: FSMContext):
     city = d.get("city", "")
     country_city = f"Pakistan – {city}"
 
-  text = (
+    text = (
         "<b>Проверьте данные:</b>\n"
         f"Страна/город: {country_city}\n"
         f"Категория визы: {d.get('visa_category', 'не указана')}\n"
