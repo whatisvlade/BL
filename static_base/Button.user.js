@@ -4,7 +4,7 @@
 // @version      2025-02-08
 // @description  Кнопки: перезагрузка и переход домой на BLS (не работает в iframe)
 // @author       You
-// @match        https://belarus.blsspainglobal.com/*
+// @match        https://appointment.thespainvisa.com/*
 // @grant        none
 // ==/UserScript==
 
@@ -70,6 +70,6 @@
     }, 'Перезагрузить страницу');
 
     createShadowButton('🏠', 'right', () => {
-        window.location.href = 'https://belarus.blsspainglobal.com/Global/account/Login?returnUrl=%2FGlobal%2Fappointment%2Fnewappointment&err=HU7zqU0yCxX3GNnx4emgb8d%2FwA73yBclF%2B5Wi%2B0CSYM%3D';
+        window.location.href = 'https://appointment.thespainvisa.com/Global/account/Login';
     }, 'На главную страницу');
 })();
