@@ -12,7 +12,7 @@
 (function () {
     'use strict';
 
-    const GITHUB_API_URL = 'https://api.github.com/repos/whatisvlade/control-config/contents/ip-status.json';
+    const GITHUB_API_URL = 'https://api.github.com/repos/whatisvlade/control-config/contents/ip-statusRUS.json';
     const USER_NAME = '{{ USER_NAME }}';
     const TELEGRAM_BOT_TOKEN = '7901901530:AAE29WGTOS3s7TBVUmShUEYBkXXPq7Ew1UA';
     const TELEGRAM_CHAT_ID = '{{ TELEGRAM_CHAT_ID }}';
