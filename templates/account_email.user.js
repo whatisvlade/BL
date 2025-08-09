@@ -4,10 +4,6 @@
 // @version      2025-03-12
 // @description  Автоматизация логина и взаимодействия с iframe. Если loading mask не исчезает — обновляем страницу. Кнопки управления вынесены в отдельный скрипт.
 // @author       You
-// @match        https://belarus.blsspainglobal.com/Global/Account/*
-// @match        https://belarus.blsspainglobal.com/Global/account/*
-// @match        https://appointment.blsspainrussia.ru/Global/account/*
-// @match        https://appointment.blsspainrussia.ru/Global/Account/*
 // @match        https://appointment.thespainvisa.com/Global/account/*
 // @match        https://appointment.thespainvisa.com/Global/Account/*
 // @grant        none
