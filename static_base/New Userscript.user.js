@@ -6,6 +6,7 @@
 // @author       You
 // @match        https://appointment.thespainvisa.com/Global/newcaptcha/logincaptcha*
 // @match        https://appointment.thespainvisa.com/Global/NewCaptcha/LoginCaptcha*
+// @run-at       document-idle
 // @grant        none
 // ==/UserScript==
 
