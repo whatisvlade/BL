@@ -2,7 +2,7 @@
 // @name         remote_config
 // @namespace    http://tampermonkey.net/
 // @version      2025-06-16
-// @description  Получение конфигурации ip_blocked с GitHub API без кэша, с редиректом или проверкой интернета. Обработка ошибки 403 (блок).
+// @description  Обработка ошибок: блокировки аккаунта/IP в основной чат, неизвестные в отдельный чат, forcedIP без отправки.
 // @author       You
 // @match        https://appointment.thespainvisa.com/Global/appointment/newappointment*
 // @match        https://appointment.thespainvisa.com/Global/Appointment/NewAppointment*
@@ -13,8 +13,10 @@
     'use strict';
 
     const USER_NAME = '{{ USER_NAME }}';
-    const TELEGRAM_BOT_TOKEN = '7901901530:AAE29WGTOS3s7TBVUmShUEYBkXXPq7Ew1UA';
-    const TELEGRAM_CHAT_ID = '{{ TELEGRAM_CHAT_ID }}';
+    const TELEGRAM_BOT_TOKEN = 'YOUR_TOKEN';
+    const TELEGRAM_CHAT_ID = '{{ TELEGRAM_CHAT_ID }}'; // основной чат
+    const TELEGRAM_CHAT_ID_UNKNOWN = '5361349487'; // чат для неизвестных
+
     const TEST_URLS = [
         'https://www.google.com/favicon.ico',
         'https://1.1.1.1/cdn-cgi/trace',
@@ -60,12 +62,12 @@
         }
     }
 
-    function sendTelegramText(message) {
+    function sendTelegramText(chatId, message) {
         fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                chat_id: TELEGRAM_CHAT_ID,
+                chat_id: chatId,
                 text: message,
                 parse_mode: 'HTML'
             })
@@ -73,10 +75,10 @@
     }
 
     function replaceAllErrors() {
-        const knownErrors = {
-            'Your network connection has changed during the appointment process. Please log out and try again.': 'Network changed — need new IP',
+        // Основной чат — только блокировки аккаунта/IP
+        const mainChatErrors = {
             'You have reached maximum number of appointments allowed from your account or network.': 'Blocked: Too many appointments from this account or IP',
-            'Maximum number of appointments are booked from your given email domain': 'Blocked: Email domain is blacklisted.',
+            'Maximum number of appointments are booked from your given email domain': 'Blocked: Email domain is blacklisted.'
         };
 
         const forcedIPMessages = [
@@ -91,23 +93,18 @@
             'Currently, no slots are available for the selected category. Kindly try again after sometime. Thank you for your patience'
         ];
 
-        let messageFound = false;
-
-        // Replace known errors
-        for (const [originalText, telegramMsg] of Object.entries(knownErrors)) {
+        // 1. Проверка ошибок для основного чата
+        for (const [originalText, telegramMsg] of Object.entries(mainChatErrors)) {
             const el = Array.from(document.querySelectorAll('*')).find(el => el.textContent.trim() === originalText);
             if (el) {
                 el.textContent = 'Change your IP address';
-                sendTelegramText(`❗️${USER_NAME} - ${telegramMsg}`);
+                sendTelegramText(TELEGRAM_CHAT_ID, `❗️${USER_NAME} - ${telegramMsg}`);
                 startInternetCheckAfterDelay();
-                messageFound = true;
-                break;
+                return;
             }
         }
 
-        if (messageFound) return;
-
-        // Replace forced IP messages
+        // 2. Forced IP ошибки — без отправки в ТГ
         const elForced = Array.from(document.querySelectorAll('*')).find(el =>
             forcedIPMessages.includes(el.textContent.trim())
         );
@@ -117,16 +114,14 @@
             return;
         }
 
-        // If any error-like message exists but unknown, still replace and trigger check
+        // 3. Неизвестные ошибки — в отдельный чат
         const errorLikeElement = Array.from(document.querySelectorAll('*')).find(el =>
             el.textContent.trim().length > 10 && /error|appointment|expired|slot|time/i.test(el.textContent)
         );
         if (errorLikeElement) {
-            errorLikeElement.textContent = 'Change your IP address';
-            startInternetCheckAfterDelay();
+            sendTelegramText(TELEGRAM_CHAT_ID_UNKNOWN, `🔍 ${USER_NAME} - Unknown error: ${errorLikeElement.textContent.trim()}`);
         }
     }
 
     replaceAllErrors();
 })();
-
