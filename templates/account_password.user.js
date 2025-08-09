@@ -4,11 +4,8 @@
 // @version      2025-06-22
 // @description  Автоматизация: ввод пароля, выделение текущей капчи, кнопка для ручного поиска.
 // @author       You
-// @match        https://belarus.blsspainglobal.com/Global/newcaptcha/logincaptcha*
 // @match        https://appointment.thespainvisa.com/Global/newcaptcha/logincaptcha*
-// @match        https://belarus.blsspainglobal.com/Global/NewCaptcha/LoginCaptcha*
 // @match        https://appointment.thespainvisa.com/Global/NewCaptcha/LoginCaptcha*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=blsspainglobal.com
 // @grant        none
 // ==/UserScript==
 
