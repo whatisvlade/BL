@@ -8,7 +8,6 @@
 // @match        https://appointment.thespainvisa.com/Global/NewCaptcha/LoginCaptcha*
 // @require      https://cdn.jsdelivr.net/npm/tesseract.js@6/dist/tesseract.min.js
 // @require      https://docs.opencv.org/5.0.0-alpha/opencv.js
-// @run-at       document-idle
 // @grant        none
 // ==/UserScript==
 
@@ -36,7 +35,7 @@
             run();
         } else {
             console.warn('⚠️ box-label отсутствует, повторный запуск через 500ms');
-            setTimeout(start, 100);
+            setTimeout(start, 500);
         }
     }
 
