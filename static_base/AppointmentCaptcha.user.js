@@ -4,8 +4,8 @@
 // @version      2025-02-08
 // @description  try to take over the world!
 // @author       You
-// @match        https://appointment.thespainvisa.com/Global/newcaptcha/logincaptcha*
-// @match        https://appointment.thespainvisa.com/Global/NewCaptcha/LoginCaptcha*
+// @match        https://appointment.thespainvisa.com/Global/appointment/appointmentcaptcha*
+// @match        https://appointment.thespainvisa.com/Global/Appointment/AppointmentCaptcha*
 // @grant        none
 // ==/UserScript==
 
