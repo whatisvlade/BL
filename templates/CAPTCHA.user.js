@@ -63,7 +63,7 @@
     }
 
     function highlightBoxLabel(div) {
-        let text = div.textContent.replace('Please select all boxes with number', 'Выберите картинки с числом');
+        let text = div.textContent.replace('Please select all boxes with number', 'Please wait for recognition.');
         const m = text.match(/\d+/);
         if (m) {
             CURRENT_NUMBER = m[0];
