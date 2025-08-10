@@ -70,7 +70,7 @@
 
         if (
             alertElement &&
-            alertElement.textContent.trim() === 'All your pending appointments are removed' &&
+            alertElement.textContent.trim() === 'All your ongoing appointments have been cleared. You can now schedule new appointment' &&
             button
         ) {
             showMessage('Script is running: waiting for internet connection...');
