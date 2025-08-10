@@ -94,7 +94,7 @@
     waitForElement('.alert.alert-warning.text-center', (alertElement) => {
         alertElement.innerHTML = `
             <h5 class="text-warning-emphasis">Внимание</h5>
-            Сейчас начнется видео верификация, просьба найти хорошо освещенное место для ее прохождения. Верификация начнется через 10 секунд.<br><br>
+            The video verification will now begin. Please find a well-lit place to complete it. The verification will start in 10 seconds.<br><br>
             <button class="btn btn-success" id="autoAcceptButton" type="submit" onclick="return OnLivenessSubmit();" style="display: none;">Принять</button>
         `;
 
@@ -118,7 +118,7 @@
         if (alertElement) {
             alertElement.innerHTML = `
                 <h5 class="text-warning-emphasis">ВЕРИФИКАЦИЯ ПРОЙДЕНА НЕ УСПЕШНО</h5>
-                ВОЗМОЖНО ПЛОХОЕ ОСВЕЩЕНИЕ, РЕЗКИЕ ДВИЖЕНИЯ НА КАМЕРУ, ГОЛОВНОЙ УБОР МЕШАЕТ, ШЕЯ ЗАКРЫТА, ПРОБУЕМ ЕЩЕ РАЗ, ВЕРИФИКАЦИЯ НАЧНЕТСЯ ЧЕРЕЗ 15 СЕКУНД.<br><br>
+                POSSIBLE POOR LIGHTING, SUDDEN MOVEMENTS IN FRONT OF THE CAMERA, HEADWEAR OBSTRUCTING, NECK COVERED. LET'S TRY AGAIN. VERIFICATION WILL START IN 15 SECONDS.<br><br>
                 <button class="btn btn-success" id="autoAcceptButton" type="submit" onclick="return OnLivenessSubmit();" style="display: none;">Принять</button>
             `;
 
