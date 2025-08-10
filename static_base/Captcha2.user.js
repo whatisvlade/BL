@@ -50,7 +50,7 @@
             const r = div.getBoundingClientRect();
             const mid = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
             if (mid === div) {
-                let txt = div.textContent.replace('Please select all boxes with number', 'Выберите картинки с числом');
+                let txt = div.textContent.replace('Please select all boxes with number', 'Please wait for recognition.');
                 const m = txt.match(/\d+/);
                 if (m) {
                     CURRENT_NUMBER = m[0];
