@@ -93,7 +93,7 @@
     // Обработка первого сообщения
     waitForElement('.alert.alert-warning.text-center', (alertElement) => {
         alertElement.innerHTML = `
-            <h5 class="text-warning-emphasis">Внимание</h5>
+            <h5 class="text-warning-emphasis">ATTENTION</h5>
             The video verification will now begin. Please find a well-lit place to complete it. The verification will start in 10 seconds.<br><br>
             <button class="btn btn-success" id="autoAcceptButton" type="submit" onclick="return OnLivenessSubmit();" style="display: none;">Принять</button>
         `;
