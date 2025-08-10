@@ -29,7 +29,7 @@
         isActive = true;
         startObserver();
 
-        heading.innerHTML = `Your IP is blocked. Change it by tapping the airplane mode ✈️ button a couple of times.<br><small style="font-weight: normal;">Через 10 секунд будет перенаправление на страницу входа...</small>`;
+        heading.innerHTML = `Your IP is blocked. Change it by tapping the airplane mode ✈️ button a couple of times.<br><small style="font-weight: normal;">In 10 seconds, you will be redirected to the login page...</small>`;
 
         // Удаляем системный текст
         const paragraph = document.querySelectorAll("p");
