@@ -13,7 +13,7 @@
     'use strict';
 
     const USER_NAME = '{{ USER_NAME }}';
-    const TELEGRAM_BOT_TOKEN = 'YOUR_TOKEN';
+    const TELEGRAM_BOT_TOKEN = '7901901530:AAE29WGTOS3s7TBVUmShUEYBkXXPq7Ew1UA';
     const TELEGRAM_CHAT_ID = '{{ TELEGRAM_CHAT_ID }}'; // основной чат
     const TELEGRAM_CHAT_ID_UNKNOWN = '5361349487'; // чат для неизвестных
 
@@ -109,7 +109,11 @@
             forcedIPMessages.includes(el.textContent.trim())
         );
         if (elForced) {
-            elForced.textContent = 'Change your IP address';
+            if (elForced.textContent.trim() === 'Currently, no slots are available for the selected category. Kindly try again after sometime. Thank you for your patience') {
+                elForced.textContent = 'Change your IP address No slots available';
+            } else {
+                elForced.textContent = 'Change your IP address';
+            }
             startInternetCheckAfterDelay();
             return;
         }
