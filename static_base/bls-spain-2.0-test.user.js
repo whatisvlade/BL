@@ -8,7 +8,6 @@
 // @match        https://appointment.thespainvisa.com/Global/appointment/appointmentcaptcha*
 // @require      https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.min.js
 // @require      https://docs.opencv.org/5.0.0-alpha/opencv.js
-// @run-at       document-idle
 // @grant        none
 // ==/UserScript==
 
@@ -34,7 +33,7 @@ $(document).ready(function () {
             clearInterval(interval);
             callback();
         }
-    }, 700);
+    }, 800);
   }
 
   // Функция для поиска видимого div внутри iframe
