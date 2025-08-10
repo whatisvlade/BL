@@ -103,7 +103,7 @@
             if (acceptButton) {
                 acceptButton.click();
                 console.log("Кнопка 'Принять' нажата.");
-                showUIMessage('Начало верификации');
+                showUIMessage('Verification started');
             } else {
                 console.log("Кнопка 'Принять' не найдена.");
             }
@@ -127,7 +127,7 @@
                 if (acceptButton) {
                     acceptButton.click();
                     console.log("Кнопка 'Принять' нажата.");
-                    showUIMessage('Повторная верификация начата');
+                    showUIMessage('Repeat verification started');
                 } else {
                     console.log("Кнопка 'Принять' не найдена.");
                 }
