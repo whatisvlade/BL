@@ -138,19 +138,19 @@ function waitForDropdownToClose($dropdown, timeout = 30) {
 // Выбор из dropdown'ов
 async function openDropdownAndSelect(optionGroup) {
   try {
-    const $dropdownRaw = await waitForElementPromise('.k-widget.k-dropdown[aria-expanded="false"]:visible:not(.processed)', 30);
+    const $dropdownRaw = await waitForElementPromise('.k-widget.k-dropdown[aria-expanded="false"]:visible:not(.processed)', 0);
     const $dropdown = $dropdownRaw.first();
     if (!$dropdown.length) throw new Error("Dropdown не найден");
 
     const $arrow = $dropdown.find('.k-select .k-icon.k-i-arrow-60-down').first();
     if ($arrow.length) {
       $arrow.click();
-      await waitForDropdownToOpen($dropdown, 30);
+      await waitForDropdownToOpen($dropdown, 0);
 
       const ownsId = $dropdown.attr('aria-owns');
       if (!ownsId) throw new Error("Нет aria-owns у dropdown");
 
-      const $listContainerRaw = await waitForElementPromise('#' + ownsId, 30);
+      const $listContainerRaw = await waitForElementPromise('#' + ownsId, 0);
       const $listContainer = $listContainerRaw.first();
 
       let selectedOption = null;
@@ -166,7 +166,7 @@ async function openDropdownAndSelect(optionGroup) {
       if (!selectedOption) throw new Error('Не найдено подходящее значение');
 
       $dropdown.find('.k-dropdown-wrap').first().click();
-      await waitForDropdownToClose($dropdown, 30);
+      await waitForDropdownToClose($dropdown, 0);
       $dropdown.addClass('processed');
       console.log('Выбрана опция "' + selectedOption + '"');
     } else {
@@ -197,7 +197,7 @@ async function runScript() {
       await waitForPremiumAccept();
     }
 
-    const $btnSubmitRaw = await waitForElementPromise('#btnSubmit', 100);
+    const $btnSubmitRaw = await waitForElementPromise('#btnSubmit', 0);
     const $btnSubmit = $btnSubmitRaw.first();
     $btnSubmit.click();
     console.log("Кнопка Submit нажата");
@@ -205,5 +205,6 @@ async function runScript() {
     console.error("Ошибка в runScript:", error);
   }
 }
+
 
 
