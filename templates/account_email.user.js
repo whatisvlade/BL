@@ -15,15 +15,21 @@
     // Впиши свой email
     const EMAIL = '{{ EMAIL }}';
 
+    // Флаг, чтобы не кликать Verify дважды
+    let alreadyClicked = false;
+
     // Автоввод email и клик по Verify
     function insertEmailAndClickVerify() {
-        var emailField = $('input.entry-disabled[type="text"]:visible').first();
+        if (alreadyClicked) return;
+
+        const emailField = $('input.entry-disabled[type="text"]:visible').first();
         if (emailField.length) {
             emailField.removeAttr('readonly');
             emailField.val(EMAIL).trigger('input').trigger('change');
-            let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+
+            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
             nativeInputValueSetter.call(emailField[0], EMAIL);
-            let ev2 = new Event('input', { bubbles: true });
+            const ev2 = new Event('input', { bubbles: true });
             emailField[0].dispatchEvent(ev2);
 
             console.log('Email вставлен в поле:', emailField.attr('id'));
@@ -32,12 +38,13 @@
             clickOnCheckbox();
 
             // Потом клик по кнопке Verify
-            var verifyButton = $('#btnVerify:visible, button#btnVerify:visible').first();
+            const verifyButton = $('#btnVerify:visible, button#btnVerify:visible').first();
             if (verifyButton.length) {
                 setTimeout(() => {
                     verifyButton.click();
                     console.log('Клик по кнопке Verify');
-                }, 3000);
+                    alreadyClicked = true;
+                }, 1000);
             } else {
                 console.log('Кнопка Verify не найдена!');
             }
@@ -58,7 +65,6 @@
         }
     }
 
-    // Выполнить при загрузке и ещё раз через 1 сек
+    // Выполнить при загрузке
     $(document).ready(insertEmailAndClickVerify);
-    setTimeout(insertEmailAndClickVerify, 1000);
 })();
