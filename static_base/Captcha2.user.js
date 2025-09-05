@@ -293,7 +293,7 @@
             capmonsterErrors++;
             console.error('CapMonster error:', err, 'Попытка:', capmonsterErrors);
 
-            if (capmonsterErrors >= 2) {
+            if (capmonsterErrors >= 3) {
                 console.warn('❌ Две ошибки подряд от CapMonster — обновляем страницу!');
                 location.reload();
             } else {
