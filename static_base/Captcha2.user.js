@@ -1,12 +1,14 @@
 // ==UserScript==
 // @name         Captcha2
 // @namespace    http://tampermonkey.net/
-// @version      2025-02-08
+// @version      2025-09-05
 // @description  try to take over the world!
 // @author       You
 // @match        https://appointment.thespainvisa.com/Global/Appointment/AppointmentCaptcha*
 // @match        https://appointment.thespainvisa.com/Global/appointment/appointmentcaptcha*
-// @grant        none
+// @grant        GM_xmlhttpRequest
+// @connect      *
+// @run-at       document-idle
 // ==/UserScript==
 
 (function() {
@@ -32,7 +34,7 @@
         });
     });
 
-    // === Оригинальные функции для поиска и фильтрации элементов ===
+    // === Оригинальные функции для поиска и фильтрации элементов (оставлены как есть) ===
     function waitForLoadingMaskToDisappear(cb) {
         const iv = setInterval(() => {
             const mask = document.querySelector('.k-loading-mask');
@@ -167,25 +169,50 @@
         if (btn) { btn.click(); submitClicked = true; }
     }
 
-    // ==== CapMonster-интеграция ====
+    // ==== CORS-safe загрузка изображений вместо canvas ====
 
-    function imageToBase64(el) {
-        return new Promise(resolve => {
-            const canvas = document.createElement('canvas');
-            const img = new Image();
-            const s = getComputedStyle(el);
-            const src = el.tagName === 'IMG' && el.src ? el.src : s.backgroundImage.slice(5, -2);
-            img.crossOrigin = 'Anonymous';
-            img.src = src;
-            img.onload = () => {
-                canvas.width = img.naturalWidth;
-                canvas.height = img.naturalHeight;
-                canvas.getContext('2d').drawImage(img, 0, 0);
-                resolve(canvas.toDataURL().split(',')[1]);
-            };
-            img.onerror = () => resolve(null);
+    function extractImageUrlFromElement(el) {
+        if (el.tagName === 'IMG' && el.src) return el.src;
+        const bg = getComputedStyle(el).backgroundImage; // url("...") или none
+        if (bg && bg !== 'none') {
+            const m = bg.match(/url\((['"]?)(.+?)\1\)/i);
+            if (m) return m[2];
+        }
+        throw new Error('No image URL for element');
+    }
+
+    function gmFetchArrayBuffer(url) {
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url,
+                responseType: 'arraybuffer',
+                onload: (res) => {
+                    if (res.status >= 200 && res.status < 300 && res.response) {
+                        resolve(res.response);
+                    } else {
+                        reject(new Error(`GM xhr failed ${res.status}`));
+                    }
+                },
+                onerror: () => reject(new Error('GM xhr network error')),
+            });
         });
     }
+
+    function arrayBufferToBase64(buf) {
+        const bytes = new Uint8Array(buf);
+        let bin = '';
+        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        return btoa(bin);
+    }
+
+    async function elementToBase64CORS(el) {
+        const url = extractImageUrlFromElement(el);
+        const buf = await gmFetchArrayBuffer(url);
+        return arrayBufferToBase64(buf);
+    }
+
+    // ==== CapMonster-интеграция (с расширенными логами) ====
 
     async function solveWithCapmonster(imagesBase64, targetNumber) {
         const create = await fetch(CREATE_TASK_URL, {
@@ -197,12 +224,15 @@
                     type: 'ComplexImageTask',
                     class: 'recognition',
                     imagesBase64,
-                    metadata: { Task: 'bls_3x3', TaskArgument: targetNumber }
+                    metadata: { Task: 'bls_3x3', TaskArgument: String(targetNumber) }
                 }
             })
         });
         const cr = await create.json();
-        if (cr.errorId !== 0) throw new Error('createTask error ' + cr.errorId);
+        if (cr.errorId !== 0) {
+            console.error('createTask failed:', cr);
+            throw new Error('createTask error ' + cr.errorId + ' ' + (cr.errorCode||'') + ' ' + (cr.errorDescription||''));
+        }
         const taskId = cr.taskId;
         const start = Date.now();
         while (Date.now() - start < POLL_TIMEOUT_MS) {
@@ -213,13 +243,16 @@
                 body: JSON.stringify({ clientKey: CAPMONSTER_API_KEY, taskId })
             });
             const jr = await res.json();
-            if (jr.errorId !== 0) throw new Error('getTaskResult error ' + jr.errorId);
-            if (jr.status === 'ready') return jr.solution.answer;
+            if (jr.errorId !== 0) {
+                console.error('getTaskResult failed:', jr);
+                throw new Error('getTaskResult error ' + jr.errorId + ' ' + (jr.errorCode||'') + ' ' + (jr.errorDescription||''));
+            }
+            if (jr.status === 'ready') return jr.solution?.answer;
         }
         throw new Error('CapMonster timeout');
     }
 
-    // Основная функция
+    // === Основная функция (минимальные изменения) ===
     async function analyzeAndSelectCaptchaImages() {
         if (submitClicked) return;
 
@@ -236,7 +269,21 @@
         }
 
         const slice = elems.slice(0, 9);
-        const base64s = await Promise.all(slice.map(imageToBase64));
+
+        // Требуем ровно 9 тайлов
+        if (slice.length !== 9) {
+            console.warn('⚠️ Ожидалось 9 тайлов, найдено:', slice.length, slice);
+            return;
+        }
+
+        // CORS-safe base64
+        let base64s;
+        try {
+            base64s = await Promise.all(slice.map(elementToBase64CORS));
+        } catch (e) {
+            console.error('tile fetch/base64 failed:', e);
+            return;
+        }
 
         let answers;
         try {
@@ -255,7 +302,7 @@
             return;
         }
 
-        answers.forEach((ok, i) => { if (ok && slice[i]) slice[i].click(); });
+        answers?.forEach((ok, i) => { if (ok && slice[i]) slice[i].click(); });
         clickSubmitButton();
     }
 
