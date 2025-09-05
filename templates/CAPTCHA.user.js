@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         CAPTCHA
 // @namespace    http://tampermonkey.net/
-// @version      2025-02-08
+// @version      2025-09-05
 // @description  try to take over the world!
 // @author       You
 // @match        https://appointment.thespainvisa.com/Global/newcaptcha/logincaptcha*
 // @match        https://appointment.thespainvisa.com/Global/NewCaptcha/LoginCaptcha*
-// @grant        none
-// @runt-at      document-idle
+// @grant        GM_xmlhttpRequest
+// @connect      *
+// @run-at       document-idle
 // ==/UserScript==
 
 (function() {
@@ -91,13 +92,25 @@
             return;
         }
 
-        // 1) Сбор base64 всех видимых картинок
-        const imagesBase64 = await Promise.all(visibleElems.map(el => imageToBase64(el)));
+        // Защита: CapMonster ждёт ровно 9 тайлов
+        if (visibleElems.length !== 9) {
+            console.warn('⚠️ Ожидалось 9 тайлов, найдено:', visibleElems.length, visibleElems);
+            return;
+        }
+
+        // 1) Сбор base64 всех видимых картинок (CORS-safe)
+        let imagesBase64;
+        try {
+            imagesBase64 = await Promise.all(visibleElems.map(el => elementToBase64CORS(el)));
+        } catch (e) {
+            console.error('tile fetch/base64 failed:', e);
+            return;
+        }
 
         // 2) Отправка в CapMonster и ожидание ответа
         let answers;
         try {
-            answers = await solveWithCapmonster(imagesBase64, CURRENT_NUMBER);
+            answers = await solveWithCapmonster(imagesBase64, String(CURRENT_NUMBER));
             capmonsterErrors = 0; // сбрасываем при успехе
         } catch (err) {
             capmonsterErrors++;
@@ -108,7 +121,7 @@
                 location.reload();
                 return;
             } else {
-                setTimeout(analyzeAndSelectCaptchaImages, 2000); // Повтор через 5 секунд
+                setTimeout(analyzeAndSelectCaptchaImages, 2000); // Повтор
                 return;
             }
         }
@@ -125,17 +138,47 @@
         clickSubmitButton(document);
     }
 
-    // Конвертирует <img> в base64 (без префикса data:image/..)
-    function imageToBase64(imgEl) {
-        return new Promise(resolve => {
-            const canvas = document.createElement('canvas');
-            canvas.width = imgEl.naturalWidth;
-            canvas.height = imgEl.naturalHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(imgEl, 0, 0);
-            const data = canvas.toDataURL().split(',')[1];
-            resolve(data);
+    // ==== CORS-safe: вытаскиваем URL и тянем байты привилегированным запросом ====
+
+    function extractImageUrlFromElement(el) {
+        if (el.tagName === 'IMG' && el.src) return el.src;
+        const bg = getComputedStyle(el).backgroundImage; // url("...") или none
+        if (bg && bg !== 'none') {
+            const m = bg.match(/url\((['"]?)(.+?)\1\)/i);
+            if (m) return m[2];
+        }
+        throw new Error('No image URL for element');
+    }
+
+    function gmFetchArrayBuffer(url) {
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url,
+                responseType: 'arraybuffer',
+                onload: (res) => {
+                    if (res.status >= 200 && res.status < 300 && res.response) {
+                        resolve(res.response);
+                    } else {
+                        reject(new Error(`GM xhr failed ${res.status}`));
+                    }
+                },
+                onerror: () => reject(new Error('GM xhr network error')),
+            });
         });
+    }
+
+    function arrayBufferToBase64(buf) {
+        const bytes = new Uint8Array(buf);
+        let bin = '';
+        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        return btoa(bin);
+    }
+
+    async function elementToBase64CORS(el) {
+        const url = extractImageUrlFromElement(el);
+        const buf = await gmFetchArrayBuffer(url);
+        return arrayBufferToBase64(buf);
     }
 
     // Создает задачу и ждёт результата
@@ -152,14 +195,15 @@
                     imagesBase64,
                     metadata: {
                         Task: 'bls_3x3',
-                        TaskArgument: targetNumber
+                        TaskArgument: String(targetNumber)
                     }
                 }
             })
         });
         const createJson = await createResp.json();
         if (createJson.errorId !== 0) {
-            throw new Error(`createTask errorId=${createJson.errorId}`);
+            console.error('createTask failed:', createJson);
+            throw new Error(`createTask errorId=${createJson.errorId} code=${createJson.errorCode||''} desc=${createJson.errorDescription||''}`);
         }
         const taskId = createJson.taskId;
 
@@ -174,9 +218,13 @@
             });
             const resultJson = await resultResp.json();
             if (resultJson.errorId !== 0) {
-                throw new Error(`getTaskResult errorId=${resultJson.errorId}`);
+                console.error('getTaskResult failed:', resultJson);
+                throw new Error(`getTaskResult errorId=${resultJson.errorId} code=${resultJson.errorCode||''} desc=${resultJson.errorDescription||''}`);
             }
             if (resultJson.status === 'ready') {
+                if (!resultJson.solution || !resultJson.solution.answer) {
+                    throw new Error('CapMonster ready but no solution.answer');
+                }
                 return resultJson.solution.answer;
             }
             // иначе статус "processing" — ждём дальше
@@ -259,4 +307,3 @@
     setTimeout(insertPasswordWithRetry, 8000);
 
 })();
-
