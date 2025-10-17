@@ -4,14 +4,10 @@
 // @version      2025-02-08
 // @description  try to take over the world!
 // @author       You
-// @match        https://appointment.blsspainrussia.ru/Global/Appointment/AppointmentCaptcha*
-// @match        https://appointment.blsspainrussia.ru/Global/appointment/appointmentcaptcha*
-// @match        https://appointment.blsspainrussia.ru/Global/newcaptcha/logincaptcha*
-// @match        https://appointment.blsspainrussia.ru/Global/NewCaptcha/LoginCaptcha*
-// @match        https://appointment.blsspainbelarus.by/Global/Appointment/AppointmentCaptcha*
-// @match        https://appointment.blsspainbelarus.by/Global/appointment/appointmentcaptcha*
 // @match        https://appointment.blsspainbelarus.by/Global/newcaptcha/logincaptcha*
 // @match        https://appointment.blsspainbelarus.by/Global/NewCaptcha/LoginCaptcha*
+// @match        https://appointment.blsspainbelarus.by/Global/Appointment/AppointmentCaptcha*
+// @match        https://appointment.blsspainbelarus.by/Global/appointment/appointmentcaptcha*
 // @grant        none
 // ==/UserScript==
 
