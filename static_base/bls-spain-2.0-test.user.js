@@ -14,6 +14,7 @@
 // @run-at       document-idle
 // ==/UserScript==
 
+
 $(document).ready(function () {
     waitForLoadingMaskToDisappear(() => {
         console.log('Loading завершен.');
@@ -36,7 +37,7 @@ $(document).ready(function () {
             clearInterval(interval);
             callback();
         }
-    }, 600);
+    }, 800);
   }
 
   // Функция для поиска видимого div внутри iframe
@@ -511,7 +512,7 @@ function isElementVisible(element, doc) {
 
 
     const modes = [
-        'pyramid_upscale','gray_blur_and_pyramid','smooth_and_pyramid','median_filter_simple','pyramid_up','pyramid_upscale','pyramid_up','pyramid_upscale','gray_blur_and_pyramid','smooth_and_pyramid','median_filter_simple','pyramid_up','pyramid_upscale','pyramid_up'
+        'pyramid_upscale','pyramid_up','smooth_and_pyramid','gray_blur_and_pyramid','pyramid_up','pyramid_upscale','smooth_and_pyramid','gray_blur_and_pyramid'
         
     ];
       const modesLen = modes.length;
