@@ -193,7 +193,7 @@
 
             showMessage(`Категория выбрана: ${chosenCategory}. Отправляем форму...`);
 
-            await delay(1700);
+            await delay(2000);
             const $btnSubmitRaw = await waitForVisible('#btnSubmit');
             ($btnSubmitRaw[0] || $btnSubmitRaw).click();
 
