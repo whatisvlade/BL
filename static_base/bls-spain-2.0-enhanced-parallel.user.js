@@ -26,7 +26,7 @@
     const result = [];
 
     const modes = [
-    'pyramid_upscale','pyramid_up','smooth_and_pyramid','gray_blur_and_pyramid','pyramid_up','pyramid_upscale','smooth_and_pyramid','gray_blur_and_pyramid'
+    'pyramid_upscale','gray_blur_and_pyramid','smooth_and_pyramid','median_filter_simple','pyramid_up','pyramid_upscale','pyramid_up','median_filter_simple','gray_blur_and_pyramid'
     ];
 
     start();
@@ -48,7 +48,7 @@
             return;
         }
         highlightBoxLabel(label);
-        setTimeout(() => analyzeAndSelectCaptchaImagesParallel(), 800);
+        setTimeout(() => analyzeAndSelectCaptchaImagesParallel(), 500);
     }
 
     function findVisibleBoxLabel() {
