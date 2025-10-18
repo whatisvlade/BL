@@ -237,9 +237,9 @@
     const count = incNewApptCount();
     log(`NewAppointment seen #${count}`);
 
-    if (count === 1 || count === 2 || count === 3) {
+    if (count === 1 || count === 2 || count === 3 || count === 4) {
       (async () => {
-        const clicked = await clickTryAgainWithWait(300, 150);
+        const clicked = await clickTryAgainWithWait(100, 150);
         if (!clicked) {
           UI.showMessage(`🔁 Перезаход №${count}…`, '#6c8cd5');
           const url = location.pathname + location.search + (location.search ? '&' : '?') + 'r=' + Date.now();
@@ -249,8 +249,8 @@
       return true; // инициировали навигацию — дальше init не нужен
     }
 
-    if (count >= 4) {
-      UI.showMessage('🔄 Порог попыток — запускаю ротацию…', '#c77d2c');
+    if (count >= 5) {
+      
       log('NewAppointment threshold → starting rotation and resetting counter');
       setNewApptCount(0);
       runCycle('newappointment-threshold').catch(e => log('Rotation error: ' + e.message));
