@@ -47,7 +47,7 @@
                     verifyButton.click();
                     console.log('Клик по кнопке Verify');
                     alreadyClicked = true;
-                }, 2000);
+                }, 1500);
             } else {
                 console.log('Кнопка Verify не найдена!');
             }
