@@ -253,7 +253,6 @@
         }, 300);
     }
 
-    // Запуск вставки пароля при загрузке и динамическом обновлении формы
     $(document).ready(insertPasswordWithRetry);
     setTimeout(insertPasswordWithRetry, 8000);
 
