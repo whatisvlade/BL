@@ -14,7 +14,7 @@
 // @match        https://belarus.blsspainglobal.com/Global/appointment/newappointment*
 // @match        https://blsspainbelarus.by/*
 // @grant        GM_xmlhttpRequest
-// @connect      nozomi.proxy.rlwy.net
+// @connect      yamabiko.proxy.rlwy.net
 // @connect      api.ipify.org
 // @connect      api64.ipify.org
 // @connect      ifconfig.me
@@ -34,9 +34,9 @@
 (function() {
   'use strict';
 
-  // ===== Конфиг =====
-  const RAILWAY_HOST = 'nozomi.proxy.rlwy.net';
-  const RAILWAY_PORT = 58990;
+
+  const RAILWAY_HOST = 'yamabiko.proxy.rlwy.net';
+  const RAILWAY_PORT = 38659;
   const API_HTTPS = `https://${RAILWAY_HOST}:${RAILWAY_PORT}`;
   const API_HTTP  = `http://${RAILWAY_HOST}:${RAILWAY_PORT}`;
 
@@ -237,9 +237,9 @@
     const count = incNewApptCount();
     log(`NewAppointment seen #${count}`);
 
-    if (count === 1 || count === 2 || count === 3 || count === 4) {
+    if (count === 1 || count === 2 || count === 3) {
       (async () => {
-        const clicked = await clickTryAgainWithWait(100, 150);
+        const clicked = await clickTryAgainWithWait(300, 150);
         if (!clicked) {
           UI.showMessage(`🔁 Перезаход №${count}…`, '#6c8cd5');
           const url = location.pathname + location.search + (location.search ? '&' : '?') + 'r=' + Date.now();
@@ -249,8 +249,7 @@
       return true; // инициировали навигацию — дальше init не нужен
     }
 
-    if (count >= 5) {
-      
+    if (count >= 4) {
       log('NewAppointment threshold → starting rotation and resetting counter');
       setNewApptCount(0);
       runCycle('newappointment-threshold').catch(e => log('Rotation error: ' + e.message));
