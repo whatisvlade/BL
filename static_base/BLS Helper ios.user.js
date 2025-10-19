@@ -182,7 +182,7 @@
   }
 
   /** Ждём кнопку Try Again (обе версии href / текст) и кликаем; true, если кликнули */
-  async function clickTryAgainWithWait(timeoutMs = 5000, stepMs = 150) {
+  async function clickTryAgainWithWait(timeoutMs = 2000, stepMs = 150) {
     const deadline = Date.now() + timeoutMs;
     const findBtn = () =>
       document.querySelector('a.btn.btn-primary[href="/Global/appointment/newappointment"]') ||
@@ -239,7 +239,7 @@
 
     if (count === 1 || count === 2 || count === 3) {
       (async () => {
-        const clicked = await clickTryAgainWithWait(300, 150);
+        const clicked = await clickTryAgainWithWait(100, 150);
         if (!clicked) {
           UI.showMessage(`🔁 Перезаход №${count}…`, '#6c8cd5');
           const url = location.pathname + location.search + (location.search ? '&' : '?') + 'r=' + Date.now();
@@ -576,7 +576,7 @@
         if (lastProxyChanged) {
           UI.showMessage(`⏳ Proxy changed. Waiting for IP...`, '#6c8cd5');
           log(`${trigger}: Proxy changed on server; waiting for external IP...`);
-          await sleep(3000);
+          await sleep(1000);
           newIP = await getPublicIP();
         } else {
           UI.showMessage(`♻️ Retry ${rounds}/${MAX_ROTATE_ROUNDS}: ${reason}`, '#c77d2c');
