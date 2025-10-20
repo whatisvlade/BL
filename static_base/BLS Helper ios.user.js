@@ -34,27 +34,27 @@
 (function() {
   'use strict';
 
-  // ===== Конфиг =====
+
   const RAILWAY_HOST = 'yamabiko.proxy.rlwy.net';
   const RAILWAY_PORT = 38659;
   const API_HTTPS = `https://${RAILWAY_HOST}:${RAILWAY_PORT}`;
   const API_HTTP  = `http://${RAILWAY_HOST}:${RAILWAY_PORT}`;
 
   const POLL_RETRIES = 25;
-  const POLL_DELAY_MS = 500;
+  const POLL_DELAY_MS = 400;
   const ROTATE_TIMEOUT_MS = 45000;
   const MAX_ROTATE_ROUNDS = 8;
   const API_TIMEOUT_MS = 15000;
 
   const AUTO_ENABLED_DEFAULT = true;
-  const AUTO_INTERVAL_SEC_DEFAULT = 500;
+  const AUTO_INTERVAL_SEC_DEFAULT = 400;
   const RELOAD_ON_CHANGE_DEFAULT = true;
 
   const IS_IOS_SAFARI = /iPhone|iPad|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent);
   const IPV4_ONLY_DEFAULT = IS_IOS_SAFARI;
   const IOS_POLL_RETRIES = 30;
-  const IOS_POLL_DELAY_MS = 500;
-  const IOS_IP_TIMEOUT_MS = 500;
+  const IOS_POLL_DELAY_MS = 400;
+  const IOS_IP_TIMEOUT_MS = 400;
 
   function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
@@ -182,7 +182,7 @@
   }
 
   /** Ждём кнопку Try Again (обе версии href / текст) и кликаем; true, если кликнули */
-  async function clickTryAgainWithWait(timeoutMs = 5000, stepMs = 150) {
+  async function clickTryAgainWithWait(timeoutMs = 2000, stepMs = 150) {
     const deadline = Date.now() + timeoutMs;
     const findBtn = () =>
       document.querySelector('a.btn.btn-primary[href="/Global/appointment/newappointment"]') ||
@@ -237,9 +237,9 @@
     const count = incNewApptCount();
     log(`NewAppointment seen #${count}`);
 
-    if (count === 1 || count === 2 || count === 3 || count === 4) {
+    if (count === 1 || count === 2 || count === 3) {
       (async () => {
-        const clicked = await clickTryAgainWithWait(1000, 150);
+        const clicked = await clickTryAgainWithWait(100, 150);
         if (!clicked) {
           UI.showMessage(`🔁 Перезаход №${count}…`, '#6c8cd5');
           const url = location.pathname + location.search + (location.search ? '&' : '?') + 'r=' + Date.now();
@@ -249,8 +249,7 @@
       return true; // инициировали навигацию — дальше init не нужен
     }
 
-    if (count >= 5) {
-      UI.showMessage('🔄 Порог попыток — запускаю ротацию…', '#c77d2c');
+    if (count >= 4) {
       log('NewAppointment threshold → starting rotation and resetting counter');
       setNewApptCount(0);
       runCycle('newappointment-threshold').catch(e => log('Rotation error: ' + e.message));
@@ -399,7 +398,7 @@
   }
 
   async function getPublicIP() {
-    const timeout = IS_IOS_SAFARI ? IOS_IP_TIMEOUT_MS : 500;
+    const timeout = IS_IOS_SAFARI ? IOS_IP_TIMEOUT_MS : 100;
     log(`🔍 Getting IP (iOS: ${IS_IOS_SAFARI}, IPv4-only: ${ls.getIPv4Only()}, timeout: ${timeout}ms)...`);
     const railwayIP = await getIPViaRailway();
     if (railwayIP) return railwayIP;
@@ -577,7 +576,7 @@
         if (lastProxyChanged) {
           UI.showMessage(`⏳ Proxy changed. Waiting for IP...`, '#6c8cd5');
           log(`${trigger}: Proxy changed on server; waiting for external IP...`);
-          await sleep(3000);
+          await sleep(1000);
           newIP = await getPublicIP();
         } else {
           UI.showMessage(`♻️ Retry ${rounds}/${MAX_ROTATE_ROUNDS}: ${reason}`, '#c77d2c');
@@ -604,9 +603,11 @@
           document.querySelector('a.btn.btn-primary[href="/Global/appointment/newappointment"]') ||
           document.querySelector('a.btn.btn-primary[href="/global/appointment/newappointment"]');
         if (bookButton) { log(`Clicking "Book New Appointment"`); setStatus(`✅ IP changed. Clicking "Book New Appointment"...`, 'success'); bookButton.click(); }
-        else if (reload) setTimeout(() => location.reload(), 200);
+        else if (reload) setTimeout(() => location.reload(), 500);
       } else if (reload) {
-        setTimeout(() => location.reload(), 200);
+        setTimeout(() => location.reload(), 500);
+
+
       }
     } catch (e) {
       setStatus(`❌ Error: ${e.message}`, 'error');
@@ -637,7 +638,7 @@
     const enabled = document.getElementById('autoSwitch')?.checked ?? ls.getAutoEnabled();
     const sec = parseInt(document.getElementById('autoInterval')?.value || ls.getAutoInterval(), 10) || AUTO_INTERVAL_SEC_DEFAULT;
     if (!enabled) return;
-    autoNextTimer = setTimeout(async () => { if (!document.hidden) await runCycle('auto'); scheduleNextCycle(); }, Math.max(10, sec) * 1000);
+    autoNextTimer = setTimeout(async () => { if (!document.hidden) await runCycle('auto'); scheduleNextCycle(); }, Math.max(10, sec) * 500);
   }
 
   function applyAutoSettings(fromUI=false) {
@@ -815,8 +816,9 @@
         const p  = document.querySelector('h1 + p');
         if (h1 && /Too\s+Many\s+Requests/i.test(h1.textContent || '') &&
             p  && /We have detected excessive requests/i.test(p.textContent || '')) {
+
           triggered = true; UI.showMessage('🔄 Too Many Requests — rotating proxy…', '#d35454'); log('TMR (non-target page) detected — rotating...');
-          runCycle('tmr').finally(() => { setTimeout(() => { location.href = 'https://appointment.blsspainbelarus.by/Global/account/Login'; }, 1000); });
+          runCycle('tmr').finally(() => { setTimeout(() => { location.href = 'https://appointment.blsspainbelarus.by/Global/account/Login'; }, 500); });
         }
       }
       if (window.top === window.self) { checkAndHandle(); setInterval(checkAndHandle, 500); }
@@ -864,14 +866,14 @@
           runCycle('tmr-on-newappointment-late').catch(e => log('Rotation error: ' + e.message));
           clearInterval(iv);
         }
-      }, 500);
+      }, 100);
     }
 
     if (isPendingAppointmentPage() || isAutoTargetPage()) {
       createPanel(); wireUI();
       setStatus(isAutoTargetPage() ? '🟢 Panel ready. Auto mode available.' : '🟡 Panel ready. Auto mode disabled (err param).', 'info');
       if (railwayAvailable) refreshCurrent().catch(()=>{});
-      if (isAutoTargetPage()) { applyAutoSettings(); if (!hasErrParam()) setTimeout(() => runCycle('auto-initial'), 500); }
+      if (isAutoTargetPage()) { applyAutoSettings(); if (!hasErrParam()) setTimeout(() => runCycle('auto-initial'), 100); }
     } else if (isMainPage()) {
       if (!currentUser || !currentPass) {
         showCredentialsPrompt().then(() => { if (currentUser && currentPass) location.href = 'https://appointment.blsspainbelarus.by/Global/account/login'; });
