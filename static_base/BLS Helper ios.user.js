@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         BLS Helper ios simpless
+// @name         BLS Helper ios
 // @namespace    http://tampermonkey.net/
 // @version      2025-10-16.13
 // @description  Автообработка TMR/Access Denied, фикс двойной ротации, счётчик появлений NewAppointment (1-2 клик Try Again, 3 — ротация) с ожиданием кнопки и без sessionStorage-флага на заходе страницы. При TMR на целевой — немедленная ротация. Проверка IP только через наш прокси сервер.
