@@ -13,6 +13,7 @@
 // @match        https://belarus.blsspainglobal.com/Global/Appointment/NewAppointment*
 // @match        https://belarus.blsspainglobal.com/Global/appointment/newappointment*
 // @match        https://blsspainbelarus.by/*
+// @exclude      https://appointment.blsspainbelarus.by/Global/appointment/livenessrequest*
 // @grant        GM_xmlhttpRequest
 // @connect      interchange.proxy.rlwy.net
 // @run-at       document-idle
