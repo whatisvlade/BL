@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         BLS Helper ios
+// @name         BLS Helper ios simpless
 // @namespace    http://tampermonkey.net/
-// @version      2025-10-16.12
-// @description  Автообработка TMR/Access Denied, фикс двойной ротации, счётчик появлений NewAppointment (1-2 клик Try Again, 3 — ротация) с ожиданием кнопки и без sessionStorage-флага на заходе страницы. При TMR на целевой — немедленная ротация.
+// @version      2025-10-16.13
+// @description  Автообработка TMR/Access Denied, фикс двойной ротации, счётчик появлений NewAppointment (1-2 клик Try Again, 3 — ротация) с ожиданием кнопки и без sessionStorage-флага на заходе страницы. При TMR на целевой — немедленная ротация. Проверка IP только через наш прокси сервер.
 // @author       You
 // @match        https://appointment.blsspainbelarus.by/*
 // @match        https://appointment.blsspainbelarus.by/Global/Appointment/NewAppointment*
@@ -13,31 +13,16 @@
 // @match        https://belarus.blsspainglobal.com/Global/Appointment/NewAppointment*
 // @match        https://belarus.blsspainglobal.com/Global/appointment/newappointment*
 // @match        https://blsspainbelarus.by/*
-// @exclude      https://appointment.blsspainbelarus.by/Global/appointment/livenessrequest*
 // @grant        GM_xmlhttpRequest
-// @connect      yamabiko.proxy.rlwy.net
-// @connect      api.ipify.org
-// @connect      api64.ipify.org
-// @connect      ifconfig.me
-// @connect      ident.me
-// @connect      checkip.amazonaws.com
-// @connect      ipinfo.io
-// @connect      ipv4.icanhazip.com
-// @connect      v4.ident.me
-// @connect      v4.ifconfig.co
-// @connect      api-ipv4.ip.sb
-// @connect      ifconfig.co
-// @connect      ipapi.co
-// @connect      httpbin.org
+// @connect      interchange.proxy.rlwy.net
 // @run-at       document-idle
 // ==/UserScript==
 
 (function() {
   'use strict';
 
-
-  const RAILWAY_HOST = 'yamabiko.proxy.rlwy.net';
-  const RAILWAY_PORT = 38659;
+  const RAILWAY_HOST = 'interchange.proxy.rlwy.net';
+  const RAILWAY_PORT = 37699;
   const API_HTTPS = `https://${RAILWAY_HOST}:${RAILWAY_PORT}`;
   const API_HTTP  = `http://${RAILWAY_HOST}:${RAILWAY_PORT}`;
 
@@ -69,7 +54,6 @@
   function setCookie(name, value) {
     document.cookie = `${name}=${value}; domain=.blsspainbelarus.by; path=/; secure; samesite=lax; max-age=31536000`;
   }
-
   let currentUser = getCookie('proxyUser') || '';
   let currentPass = getCookie('proxyPass') || '';
 
@@ -90,11 +74,9 @@
 
   // ===== Состояние =====
   let isRunning = false;
-  let lastSeenIP = null;
   let autoNextTimer = null;
   let rotateCallCounter = 0;
   let railwayAvailable = false;
-  let ipCheckHistory = [];
   let lastWorkingBase = null;
 
   // Анти-дубликаты
@@ -182,26 +164,50 @@
     return /\/global\/appointment\/newappointment\/?$/i.test(location.pathname);
   }
 
-  /** Ждём кнопку Try Again (обе версии href / текст) и кликаем; true, если кликнули */
+  /** Ждём кнопку Try Again или Go to home и кликаем; true, если кликнули или перенаправили */
   async function clickTryAgainWithWait(timeoutMs = 2000, stepMs = 150) {
     const deadline = Date.now() + timeoutMs;
-    const findBtn = () =>
-      document.querySelector('a.btn.btn-primary[href="/Global/appointment/newappointment"]') ||
-      document.querySelector('a.btn.btn-primary[href="/global/appointment/newappointment"]') ||
-      Array.from(document.querySelectorAll('a.btn.btn-primary')).find(a => /try\s*again/i.test(a.textContent || ''));
 
-    let btn = findBtn();
-    while (!btn && Date.now() < deadline) {
+    const findBtn = () => {
+      // Try Again кнопки
+      const tryAgainBtn =
+        document.querySelector('a.btn.btn-primary[href="/Global/appointment/newappointment"]') ||
+        document.querySelector('a.btn.btn-primary[href="/global/appointment/newappointment"]') ||
+        Array.from(document.querySelectorAll('a.btn.btn-primary')).find(a => /try\s*again/i.test(a.textContent || ''));
+
+      // Go to home кнопки
+      const goHomeBtn =
+        document.querySelector('a.btn.btn-primary[href="/"]') ||
+        document.querySelector('a.btn[href="/"]') ||
+        Array.from(document.querySelectorAll('a.btn, a.btn-primary')).find(a => /go\s*to\s*home|home|main\s*page/i.test(a.textContent || ''));
+
+      return { tryAgainBtn, goHomeBtn };
+    };
+
+    let buttons = findBtn();
+    while (!buttons.tryAgainBtn && !buttons.goHomeBtn && Date.now() < deadline) {
       await new Promise(r => setTimeout(r, stepMs));
-      btn = findBtn();
+      buttons = findBtn();
     }
-    if (btn) {
-      UI.showMessage('🔁 Try Again…', '#6c8cd5');
+
+    if (buttons.tryAgainBtn) {
+      UI.showMessage('🔁 Clicking: Try Again', '#6c8cd5');
       log('Try Again button found — clicking');
-      setTimeout(() => btn.click(), 30); // даём баннеру отрисоваться
+      setTimeout(() => buttons.tryAgainBtn.click(), 30);
       return true;
     }
-    log('Try Again button not found (timeout)');
+
+    if (buttons.goHomeBtn) {
+      UI.showMessage('🔁 Redirecting to New Appointment page', '#6c8cd5');
+      log('Go to home button found — redirecting to New Appointment');
+      // Вместо клика по кнопке "Go to home" сразу перенаправляем на целевую страницу
+      setTimeout(() => {
+        window.location.href = 'https://appointment.blsspainbelarus.by/Global/appointment/newappointment';
+      }, 30);
+      return true;
+    }
+
+    log('Neither Try Again nor Go to home button found (timeout)');
     return false;
   }
 
@@ -222,7 +228,7 @@
    * ≥5 — ротация.
    * НОВОЕ: если на целевой странице TMR — немедленная ротация, счётчик помечаем как исчерпанный.
    */
-  function handleNewAppointmentAppearance() { // NEW (переписано)
+  function handleNewAppointmentAppearance() {
     if (!isNewAppointmentPageStrict()) return false;
 
     // Приоритет: если на целевой странице TMR — сразу ротация
@@ -234,6 +240,9 @@
       runCycle('tmr-on-newappointment').catch(e => log('Rotation error: ' + e.message));
       return false; // не блокируем остальной init
     }
+
+    // ВЫНОСИМ ОБРАБОТЧИКИ КНОПОК В ОТДЕЛЬНУЮ ФУНКЦИЮ И ВЫЗЫВАЕМ ЕЁ ПЕРЕД ВСЕМИ ПРОВЕРКАМИ
+    setupButtonClickHandlers();
 
     const count = incNewApptCount();
     log(`NewAppointment seen #${count}`);
@@ -258,6 +267,50 @@
     }
 
     return false;
+  }
+
+  // НОВАЯ ФУНКЦИЯ: настройка обработчиков для всех кнопок
+  function setupButtonClickHandlers() {
+    // Обработчик для кнопки "Go To Home"
+    const goToHomeBtn = document.querySelector('a.btn.btn-primary[href="/"]');
+    if (goToHomeBtn && !goToHomeBtn.hasAttribute('data-counter-handled')) {
+      goToHomeBtn.setAttribute('data-counter-handled', 'true');
+      goToHomeBtn.addEventListener('click', function(e) {
+        log('Go To Home clicked - incrementing counter');
+        const newCount = incNewApptCount();
+        log(`Counter after Go To Home click: ${newCount}`);
+
+        // Проверяем, не достигли ли лимита после клика
+        if (newCount >= 4) {
+          log('Threshold reached after Go To Home click - preventing navigation and scheduling rotation');
+          e.preventDefault(); // предотвращаем переход на главную
+          e.stopImmediatePropagation();
+
+          setTimeout(() => {
+            setNewApptCount(0);
+            runCycle('go-to-home-click').catch(e => log('Rotation error: ' + e.message));
+          }, 100);
+        }
+      });
+    }
+
+    // Обработчик для кнопки "Try Again" (дополнительная страховка)
+    const tryAgainBtns = [
+      document.querySelector('a.btn.btn-primary[href="/Global/appointment/newappointment"]'),
+      document.querySelector('a.btn.btn-primary[href="/global/appointment/newappointment"]'),
+      ...Array.from(document.querySelectorAll('a.btn.btn-primary')).filter(a => /try\s*again/i.test(a.textContent || ''))
+    ].filter(Boolean);
+
+    tryAgainBtns.forEach(btn => {
+      if (!btn.hasAttribute('data-counter-handled')) {
+        btn.setAttribute('data-counter-handled', 'true');
+        btn.addEventListener('click', function() {
+          log('Try Again clicked - incrementing counter');
+          const newCount = incNewApptCount();
+          log(`Counter after Try Again click: ${newCount}`);
+        });
+      }
+    });
   }
 
   // ===== Creds UI =====
@@ -372,7 +425,7 @@
     throw lastErr || new Error('API unreachable');
   }
 
-  // ===== IP helpers =====
+  // ===== IP helpers - ТОЛЬКО ЧЕРЕЗ НАШ ПРОКСИ СЕРВЕР =====
   function extractIP(text) {
     if (!text) return null;
     try { const j = JSON.parse(text); if (j && typeof j.ip === 'string') return j.ip.trim(); } catch(_){}
@@ -385,66 +438,44 @@
     return null;
   }
 
-  async function getIPViaRailway() {
-    if (!railwayAvailable) return null;
+  // МОДИФИЦИРОВАННАЯ ФУНКЦИЯ: проверка IP только через наш прокси сервер
+  async function getPublicIP() {
+    log(`🔍 Getting IP via Railway proxy server only (iOS: ${IS_IOS_SAFARI}, IPv4-only: ${ls.getIPv4Only()})...`);
+
+    if (!railwayAvailable) {
+      log('⚠️ Railway API недоступен, невозможно получить IP');
+      return null;
+    }
+
     try {
       log('🔍 Getting IP via Railway /myip...');
       const data = await callAPI('/myip', { method: 'GET', timeout: 10000 });
-      if (data && data.ip) { const ip = String(data.ip).trim(); log(`✅ Railway /myip: ${ip}`); return ip; }
+
+      if (data && data.ip) {
+        const ip = String(data.ip).trim();
+        log(`✅ Railway /myip: ${ip} (method: ${data.method || 'unknown'}, source: ${data.source || 'unknown'})`);
+        return ip;
+      } else {
+        log('⚠️ Railway /myip returned no IP data');
+        return null;
+      }
     } catch (e) {
       log(`⚠️ Railway /myip failed: ${e.message}`);
-      if (e.message.includes('Network error') || e.message.includes('Timeout')) { log('⚠️ Railway /myip недоступен, проверяем статус...'); await testRailwayConnection(); }
-    }
-    return null;
-  }
-
-  async function getPublicIP() {
-    const timeout = IS_IOS_SAFARI ? IOS_IP_TIMEOUT_MS : 100;
-    log(`🔍 Getting IP (iOS: ${IS_IOS_SAFARI}, IPv4-only: ${ls.getIPv4Only()}, timeout: ${timeout}ms)...`);
-    const railwayIP = await getIPViaRailway();
-    if (railwayIP) return railwayIP;
-
-    const cacheBust = `?t=${Date.now()}&r=${Math.random().toString(36).substr(2, 9)}`;
-    const v4sources = [
-      `https://ipv4.icanhazip.com/${cacheBust}`,
-      `https://v4.ident.me/${cacheBust}`,
-      `https://v4.ifconfig.co/ip${cacheBust}`,
-      `https://api-ipv4.ip.sb/ip${cacheBust}`,
-      `https://api.ipify.org?format=json${cacheBust}`
-    ];
-    const mixedSources = [
-      `https://api.ipify.org?format=json${cacheBust}`,
-      `https://api64.ipify.org?format=json${cacheBust}`,
-      `https://ifconfig.me/ip${cacheBust}`,
-      `https://ident.me/${cacheBust}`,
-      `https://checkip.amazonaws.com/${cacheBust}`,
-      `https://ipinfo.io/ip${cacheBust}`
-    ];
-
-    const preferV4 = ls.getIPv4Only();
-    const sources = preferV4 ? v4sources : [...v4sources, ...mixedSources];
-
-    for (let i = 0; i < Math.min(3, sources.length); i++) {
-      const url = sources[i];
-      try {
-        const txt = (await gmXhr({ method: 'GET', url, timeout: 10000, responseType: 'text' })).responseText.trim();
-        const ip = extractIP(txt);
-        if (ip && (!preferV4 || !ip.includes(':'))) { log(`✅ IP from ${url}: ${ip}`); return ip; }
-      } catch (e) {
-        if (!e.message.includes('407')) log(`⚠️ Failed ${url}: ${e.message}`);
+      if (e.message.includes('Network error') || e.message.includes('Timeout')) {
+        log('⚠️ Railway /myip недоступен, проверяем статус...');
+        await testRailwayConnection();
       }
+      return null;
     }
-    log('⚠️ Could not get public IP from any source');
-    return null;
   }
 
-  // ===== Ротация (фикс двойной ротации) =====
+  // ===== Ротация (упрощенная логика - только смена прокси) =====
   async function rotateOnce() {
-    const STABILIZE_AFTER_ROTATE_MS = 2000;
-    const ROTATE_COOLDOWN_MS = 5000;
+    const STABILIZE_AFTER_ROTATE_MS = 1000;
+    const ROTATE_COOLDOWN_MS = 3000;
     lastProxyChanged = false;
 
-    if (rotateInProgress) { log('⛔ rotateOnce already running'); return lastSeenIP || null; }
+    if (rotateInProgress) { log('⛔ rotateOnce already running'); return true; }
 
     const now = Date.now();
     if (now < rotateCooldownUntil) {
@@ -464,7 +495,6 @@
       }
 
       let rotateSuccess = false;
-      let rotateErrored = false;
 
       if (railwayAvailable) {
         try {
@@ -472,7 +502,6 @@
           log('✔ /rotate успешно вызван (single-base)');
           rotateSuccess = true;
         } catch (e) {
-          rotateErrored = true;
           log(`⚠️ /rotate failed (single-base): ${e.message}`);
         }
       } else {
@@ -496,40 +525,11 @@
       lastProxyChanged = !!(beforeProxy && afterProxy && beforeProxy !== afterProxy);
       if (lastProxyChanged) {
         log(`✅ Proxy changed (server): ${beforeProxy} → ${afterProxy}`);
-        if (rotateErrored) rotateCooldownUntil = Date.now() + ROTATE_COOLDOWN_MS;
+        return true; // Прокси сменился - этого достаточно
       } else {
         log(`ℹ️ Proxy unchanged (server or unavailable): before=${beforeProxy} after=${afterProxy}`);
+        return false; // Прокси не сменился
       }
-
-      const pollRetries = IS_IOS_SAFARI ? IOS_POLL_RETRIES : POLL_RETRIES;
-      const pollDelay = IS_IOS_SAFARI ? IOS_POLL_DELAY_MS : POLL_DELAY_MS;
-
-      let afterIP = null;
-      for (let i = 0; i < pollRetries; i++) {
-        await sleep(pollDelay);
-        const ip = await getPublicIP();
-        log(`   poll ${i+1}/${pollRetries}: IP=${ip || 'null'} (last: ${lastSeenIP || 'null'})`);
-        if (!ip) continue;
-
-        if (IS_IOS_SAFARI) {
-          ipCheckHistory.push({ ip, timestamp: Date.now() });
-          if (ipCheckHistory.length > 10) ipCheckHistory.shift();
-          if (ip !== lastSeenIP) {
-            if (i < pollRetries - 1) {
-              await sleep(800);
-              const confirmIP = await getPublicIP();
-              if (confirmIP === ip) { afterIP = ip; break; }
-              continue;
-            }
-            afterIP = ip; break;
-          }
-        } else {
-          if (ip !== lastSeenIP) { afterIP = ip; break; }
-        }
-      }
-
-      if (afterIP) lastSeenIP = afterIP;
-      return afterIP || lastSeenIP || null;
 
     } finally {
       rotateInProgress = false;
@@ -543,72 +543,55 @@
     if (btn) { btn.disabled = true; btn.style.opacity = '.6'; }
 
     try {
-      setStatus('🌐 Проверяю текущий IP...', 'info');
-      const ipBefore = lastSeenIP || await getPublicIP();
-      if (!ipBefore) { setStatus('❌ Не удалось получить IP', 'error'); log(`${trigger}: no IP obtained`); return; }
-      lastSeenIP = ipBefore;
-
       rotateCallCounter += 1;
       const callId = rotateCallCounter;
-      log(`>>> ${trigger}: ВЫЗОВ rotate #${callId} (before=${ipBefore})`);
-      setStatus(`🔄 Ротация #${callId} (IP: ${ipBefore}, Railway: ${railwayAvailable ? 'OK' : 'OFFLINE'})...`, 'info');
+      log(`>>> ${trigger}: ВЫЗОВ rotate #${callId}`);
+      setStatus(`🔄 Ротация #${callId} (Railway: ${railwayAvailable ? 'OK' : 'OFFLINE'})...`, 'info');
 
-      if (railwayAvailable) { refreshCurrent().catch(()=>{}); }
+
 
       let rounds = 0;
-      let newIP = ipBefore;
+      let rotateSuccess = false;
 
-      newIP = await rotateOnce();
+      // Пытаемся сменить прокси
+      rotateSuccess = await rotateOnce();
       rounds++;
 
-      while (
-        rounds < MAX_ROTATE_ROUNDS &&
-        (
-          !newIP ||
-          IPBlocklist.has(newIP) ||
-          (newIP === ipBefore && !lastProxyChanged)
-        )
-      ) {
-        const reason =
-          !newIP ? 'no IP' :
-          IPBlocklist.has(newIP) ? `IP ${newIP} blocked` :
-          (lastProxyChanged ? 'proxy changed, waiting IP' : 'IP unchanged & proxy unchanged');
-
-        if (lastProxyChanged) {
-          UI.showMessage(`⏳ Proxy changed. Waiting for IP...`, '#6c8cd5');
-          log(`${trigger}: Proxy changed on server; waiting for external IP...`);
-          await sleep(1000);
-          newIP = await getPublicIP();
-        } else {
-          UI.showMessage(`♻️ Retry ${rounds}/${MAX_ROTATE_ROUNDS}: ${reason}`, '#c77d2c');
-          log(`${trigger}: Retry ${rounds}/${MAX_ROTATE_ROUNDS}: ${reason}`);
-          newIP = await rotateOnce();
-          rounds++;
-        }
+      // Повторяем если прокси не сменился
+      while (rounds < MAX_ROTATE_ROUNDS && !rotateSuccess) {
+        UI.showMessage(`♻️ Retry ${rounds}/${MAX_ROTATE_ROUNDS}: proxy unchanged`, '#c77d2c');
+        log(`${trigger}: Retry ${rounds}/${MAX_ROTATE_ROUNDS}: proxy unchanged`);
+        rotateSuccess = await rotateOnce();
+        rounds++;
       }
 
-      if (!newIP || newIP === ipBefore) {
-        const msg = railwayAvailable ? 'IP не сменился' : 'Railway недоступен, IP может не измениться';
+      if (!rotateSuccess) {
+        const msg = railwayAvailable ? 'Прокси не сменился на сервере' : 'Railway недоступен';
         setStatus(`⚠️ ${msg}`, 'error');
-        log(`${trigger}: IP unchanged (before=${ipBefore}, after=${newIP})`);
+        log(`${trigger}: Proxy rotation failed after ${rounds} attempts`);
         return;
       }
 
-      lastSeenIP = newIP;
+      // Прокси сменился - получаем новый IP для отображения
+      let newIP = null;
+      try {
+        newIP = await getPublicIP();
+      } catch (e) {
+        log(`Warning: Could not get new IP for display: ${e.message}`);
+      }
+
       const reload = (document.getElementById('reloadOnChange')?.checked ?? ls.getReload()) && isAutoTargetPage();
-      setStatus(`✅ IP changed: ${ipBefore} → ${newIP}${reload ? '. Reloading...' : ''}`, 'success');
-      log(`${trigger}: IP CHANGED ${ipBefore} → ${newIP}${reload ? ' [reload]' : ''}`);
+      setStatus(`✅ Proxy rotated successfully${newIP ? ` (IP: ${newIP})` : ''}${reload ? '. Reloading...' : ''}`, 'success');
+      log(`${trigger}: PROXY ROTATED${newIP ? ` (IP: ${newIP})` : ''}${reload ? ' [reload]' : ''}`);
 
       if (isPendingAppointmentPage()) {
         const bookButton =
           document.querySelector('a.btn.btn-primary[href="/Global/appointment/newappointment"]') ||
           document.querySelector('a.btn.btn-primary[href="/global/appointment/newappointment"]');
-        if (bookButton) { log(`Clicking "Book New Appointment"`); setStatus(`✅ IP changed. Clicking "Book New Appointment"...`, 'success'); bookButton.click(); }
+        if (bookButton) { log(`Clicking "Book New Appointment"`); setStatus(`✅ Proxy rotated. Clicking "Book New Appointment"...`, 'success'); bookButton.click(); }
         else if (reload) setTimeout(() => location.reload(), 500);
       } else if (reload) {
         setTimeout(() => location.reload(), 500);
-
-
       }
     } catch (e) {
       setStatus(`❌ Error: ${e.message}`, 'error');
@@ -713,7 +696,7 @@
         <div style="font-weight:bold;opacity:.9;margin-bottom:4px;">📜 Log</div>
         <div id="logDiv" style="font-family:monospace; font-size:11px; white-space:pre-wrap;"></div>
       </div>
-      <div style="margin-top:6px;font-size:10px;opacity:.8;">IP Detection: Railway API → Public Services (HTTPS→HTTP fallback)</div>
+      <div style="margin-top:6px;font-size:10px;opacity:.8;">IP Detection: Railway Proxy Server Only (/myip endpoint)</div>
     `;
     document.body.appendChild(p);
 
@@ -761,9 +744,9 @@
     document.getElementById('rotateBtn')?.addEventListener('click', () => runCycle('manual'));
     document.getElementById('refreshBtn')?.addEventListener('click', refreshCurrent);
     document.getElementById('checkIpBtn')?.addEventListener('click', async () => {
-      setStatus('🔍 Checking IP...', 'info');
+      setStatus('🔍 Checking IP via proxy server...', 'info');
       const ip = await getPublicIP();
-      setStatus(ip ? `🌐 Your IP: ${ip}` : '❌ Could not get IP', ip ? 'info' : 'error');
+      setStatus(ip ? `🌐 Your IP (via proxy): ${ip}` : '❌ Could not get IP via proxy server', ip ? 'info' : 'error');
     });
     document.getElementById('testApiBtn')?.addEventListener('click', async () => {
       setStatus('🔧 Testing Railway API...', 'info');
@@ -796,7 +779,7 @@
 
   // ===== Init =====
   async function boot() {
-    log(`Boot: user=${currentUser}, iOS=${IS_IOS_SAFARI}, Railway=${RAILWAY_HOST}:${RAILWAY_PORT}`);
+    log(`Boot: user=${currentUser}, iOS=${IS_IOS_SAFARI}, Railway=${RAILWAY_HOST}:${RAILWAY_PORT}, IP Check: Proxy Server Only`);
     await testRailwayConnection();
 
     // РАННИЙ ХУК: 1–4 → Try Again; ≥5 → ротация; NEW: TMR на целевой — немедленная ротация
@@ -873,7 +856,7 @@
     if (isPendingAppointmentPage() || isAutoTargetPage()) {
       createPanel(); wireUI();
       setStatus(isAutoTargetPage() ? '🟢 Panel ready. Auto mode available.' : '🟡 Panel ready. Auto mode disabled (err param).', 'info');
-      if (railwayAvailable) refreshCurrent().catch(()=>{});
+
       if (isAutoTargetPage()) { applyAutoSettings(); if (!hasErrParam()) setTimeout(() => runCycle('auto-initial'), 100); }
     } else if (isMainPage()) {
       if (!currentUser || !currentPass) {
@@ -882,6 +865,29 @@
     } else {
       log('INIT: triggers active, panel not shown on this page');
     }
+  }
+  // ДОПОЛНИТЕЛЬНЫЙ ОБРАБОТЧИК В КОНЦЕ boot() ФУНКЦИИ
+  function setupGlobalButtonHandlers() {
+    // Вешаем обработчик на весь документ для перехвата кликов
+    document.addEventListener('click', function(e) {
+      const target = e.target.closest('a.btn.btn-primary[href="/"]');
+      if (target) {
+        log('Go To Home clicked (global handler) - incrementing counter');
+        const newCount = incNewApptCount();
+        log(`Counter after Go To Home click: ${newCount}`);
+
+        if (newCount >= 4) {
+          log('Threshold reached - preventing navigation and rotating');
+          e.preventDefault();
+          e.stopImmediatePropagation();
+
+          setTimeout(() => {
+            setNewApptCount(0);
+            runCycle('go-to-home-global').catch(e => log('Rotation error: ' + e.message));
+          }, 100);
+        }
+      }
+    }, true); // useCapture = true для перехвата на ранней фазе
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
