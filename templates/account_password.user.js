@@ -6,6 +6,8 @@
 // @author       You
 // @match        https://appointment.blsspainbelarus.by/Global/newcaptcha/logincaptcha*
 // @match        https://appointment.blsspainbelarus.by/Global/NewCaptcha/LoginCaptcha*
+// @exclude      https://appointment.blsspainbelarus.by/Global/NewCaptcha/LoginCaptchaSubmit*
+// @exclude      https://appointment.blsspainbelarus.by/Global/NewCaptcha/logincaptchasubmit*
 // @grant        none
 // ==/UserScript==
 
