@@ -35,8 +35,8 @@ BASE_DIR = os.path.dirname(__file__)
 DIRS = {
     ("Беларусь","one_record"):   ("templates","strategies","static_base","visa_type"),
     ("Беларусь","two_records"):  ("templates1","strategies1","static_base1","visa_type1"),
-    ("Россия","one_record"):    ("templates2","strategies2","static_base2","visa_type2"),
-    ("Россия","two_records"):   ("templates3","strategies3","static_base3","visa_type3"),
+    ("Россия","one_record"):     ("templates2","strategies2","static_base2","visa_type2"),
+    ("Россия","two_records"):    ("templates3","strategies3","static_base3","visa_type3"),
 }
 DIRS = {k: tuple(os.path.join(BASE_DIR, p) for p in v) for k, v in DIRS.items()}
 
@@ -51,6 +51,9 @@ class Form(StatesGroup):
     email           = State()
     password        = State()
     emailpassword   = State()
+    # Новые состояния для прокси
+    proxy_user      = State()
+    proxy_pass      = State()
     travel_date     = State()
     visa_type       = State()
     start_day       = State()
@@ -155,9 +158,22 @@ async def process_password(m: Message, state: FSMContext):
     await m.answer("Введите пароль от email:")
     await state.set_state(Form.emailpassword)
 
+# Изменено: после пароля от email спрашиваем логин/пароль прокси
 @rt.message(Form.emailpassword)
 async def process_emailpwd(m: Message, state: FSMContext):
     await state.update_data(emailpassword=m.text)
+    await m.answer("Введите логин прокси:")
+    await state.set_state(Form.proxy_user)
+
+@rt.message(Form.proxy_user)
+async def process_proxy_user(m: Message, state: FSMContext):
+    await state.update_data(proxy_user=m.text)
+    await m.answer("Введите пароль прокси:")
+    await state.set_state(Form.proxy_pass)
+
+@rt.message(Form.proxy_pass)
+async def process_proxy_pass(m: Message, state: FSMContext):
+    await state.update_data(proxy_pass=m.text)
     await m.answer("Введите дату поездки (ГГГГ-ММ-ДД):")
     await state.set_state(Form.travel_date)
 
@@ -171,10 +187,10 @@ async def process_travel_date(m: Message, state: FSMContext):
         ("random", "Рандомно (Premium/Normal)"),
     ]:
         kb.button(text=title, callback_data=code)
-    # Устанавливаем по одной кнопке в строке
     kb.adjust(1)
     await m.answer("Выберите тип визы:  ", reply_markup=kb.as_markup())
     await state.set_state(Form.visa_type)
+
 # ───────────────────────────────────────────────────────────
 # Выбор типа визы и диапазона дней
 # ───────────────────────────────────────────────────────────
@@ -197,12 +213,10 @@ async def process_end_day(m: Message, state: FSMContext):
     await m.answer("Введите запрещённые даты через запятую или '-'  если нет:")
     await state.set_state(Form.forbidden_dates)
 
-
 @rt.message(Form.forbidden_dates)
 async def process_forbidden(m: Message, state: FSMContext):
     await state.update_data(forbidden_dates=m.text)
     kb = InlineKeyboardBuilder()
-    # Список стратегий с короткими подписями
     strategies = [
         ("first_date_first_time.user","Первая дата и первое время"),
         ("first_date_last_time.user","Первая дата и последнее время"),
@@ -212,7 +226,6 @@ async def process_forbidden(m: Message, state: FSMContext):
     ]
     for code, title in strategies:
         kb.button(text=title, callback_data=code)
-    # По одной кнопке в строке
     kb.adjust(1)
     await m.answer("Выберите стратегию выбора дат и времени:", reply_markup=kb.as_markup())
     await state.set_state(Form.strategy)
@@ -238,6 +251,8 @@ async def preview(cb: CallbackQuery, state: FSMContext):
         f"Email: {d['email']}\n"
         f"Пароль: {d['password']}\n"
         f"Пароль e-mail: {d['emailpassword']}\n"
+        f"Прокси логин: {d['proxy_user']}\n"
+        f"Прокси пароль: {d['proxy_pass']}\n"
         f"Дата поездки: {d['travel_date']}\n"
         f"Тип визы: {visa}\n"
         f"Диапазон: {d['start_day']}–{d['end_day']}\n"
@@ -266,43 +281,64 @@ async def generate(cb: CallbackQuery, state: FSMContext):
     strat_file = os.path.join(dirs['STRATEGIES_DIR'], f"strategy_{d['strategy']}.js")
     if not os.path.exists(strat_file):
         return await cb.message.answer("❌ Стратегия не найдена")
-    forbidden_js = ",".join(f"'{x.strip()}'" for x in d['forbidden_dates'].split(',') if x.strip()) if d['forbidden_dates'].strip()!='-' else ""
+
+    forbidden_js = ",".join(
+        f"'{x.strip()}'" for x in d['forbidden_dates'].split(',') if x.strip()
+    ) if d['forbidden_dates'].strip()!='-' else ""
+
     mapping = {
-        'START_DATE':      d['start_day'],
-        'END_DATE':        d['end_day'],
-        'FORBIDDEN_DATES': forbidden_js,
+        'START_DATE':       d['start_day'],
+        'END_DATE':         d['end_day'],
+        'FORBIDDEN_DATES':  forbidden_js,
         'TELEGRAM_CHAT_ID': str(d['chat_id']),
-        'USER_NAME':       d['name'],
-        'EMAIL':           d['email'],
-        'PASSWORD':        d['password'],
-        'EMAILPASSWORD':   d['emailpassword'],
-        'TRAVEL_DATE':     d['travel_date'],
-        'VISA_TYPE_1':     vt1,
-        'VISA_TYPE_2':     vt2,
-        'CITY':            d.get('city',''),
+        'USER_NAME':        d['name'],
+        'EMAIL':            d['email'],
+        'PASSWORD':         d['password'],
+        'EMAILPASSWORD':    d['emailpassword'],
+        'TRAVEL_DATE':      d['travel_date'],
+        'VISA_TYPE_1':      vt1,
+        'VISA_TYPE_2':      vt2,
+        'CITY':             d.get('city',''),
+        # Прокси
+        'PROXY_USER':       d['proxy_user'],
+        'PROXY_PASS':       d['proxy_pass'],
     }
-    def repl(m): return mapping.get(m.group(1), m.group(0))
+
+    def repl(m):
+        return mapping.get(m.group(1), m.group(0))
+
     with tempfile.TemporaryDirectory() as tmp:
         # Стратегия
         txt = re.sub(r"{{\s*([A-Z_]+)\s*}}", repl, open(strat_file, encoding='utf-8').read())
         open(os.path.join(tmp, os.path.basename(strat_file)), 'w', encoding='utf-8').write(txt)
+
         # Visa type
         for root,_,files in os.walk(dirs['VISA_TYPE_DIR']):
             for fn in files:
-                c = open(os.path.join(root, fn), encoding='utf-8').read()
+                c_path = os.path.join(root, fn)
+                c = open(c_path, encoding='utf-8').read()
                 c = re.sub(r"{{\s*CITY\s*}}", mapping['CITY'], c)
                 c = re.sub(r"{{\s*VISA_TYPE_1\s*}}", mapping['VISA_TYPE_1'], c)
                 c = re.sub(r"{{\s*VISA_TYPE_2\s*}}", mapping['VISA_TYPE_2'], c)
                 open(os.path.join(tmp, fn), 'w', encoding='utf-8').write(c)
-        # Шаблоны
+
+        # Шаблоны (важно: тут подставляем и ВАШ_ЛОГИН/ВАШ_ПАРОЛЬ)
         for root,_,files in os.walk(dirs['TEMPLATES_DIR']):
             for fn in files:
-                t = re.sub(r"{{\s*([A-Z_]+)\s*}}", repl, open(os.path.join(root, fn), encoding='utf-8').read())
+                full_path = os.path.join(root, fn)
+                t = open(full_path, encoding='utf-8').read()
+                # Подстановка {{ KEY }}
+                t = re.sub(r"{{\s*([A-Z_]+)\s*}}", repl, t)
+                # Замена строковых плейсхолдеров для прокси
+                t = t.replace("ВАШ_ЛОГИН", mapping['PROXY_USER'])
+                t = t.replace("ВАШ_ПАРОЛЬ", mapping['PROXY_PASS'])
                 open(os.path.join(tmp, fn), 'w', encoding='utf-8').write(t)
+
         # Статика
         for root,_,files in os.walk(dirs['STATIC_BASE_DIR']):
             for fn in files:
                 shutil.copy(os.path.join(root, fn), os.path.join(tmp, fn))
+
         # Архив и отправка
         archive_name = d['name'].replace(' ', '_') + '_scripts.zip'
         zip_path = os.path.join(tmp, archive_name)
@@ -310,7 +346,9 @@ async def generate(cb: CallbackQuery, state: FSMContext):
             for f in os.listdir(tmp):
                 if f != archive_name:
                     z.write(os.path.join(tmp, f), f)
+
         await bot.send_document(chat_id=d['chat_id'], document=FSInputFile(zip_path, filename=archive_name))
+
     kb = InlineKeyboardBuilder()
     kb.button(text="🔄 Начать заново", callback_data="restart")
     await cb.message.answer("✅ Архив отправлен!", reply_markup=kb.as_markup())
