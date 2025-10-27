@@ -37,7 +37,7 @@ $(document).ready(function () {
             clearInterval(interval);
             callback();
         }
-    }, 800);
+    }, 700);
   }
 
   // Функция для поиска видимого div внутри iframe
