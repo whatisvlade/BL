@@ -512,7 +512,7 @@ function isElementVisible(element, doc) {
 
 
     const modes = [
-       'pyramid_upscale','gray_blur_and_pyramid','smooth_and_pyramid','median_filter_simple','pyramid_up','pyramid_upscale','pyramid_up','median_filter_simple','gray_blur_and_pyramid'
+        'pyramid_upscale','two_stage_threshold','smooth_and_pyramid','median_filter_simple','pyramid_up','pyramid_upscale','pyramid_up','two_stage_threshold','smooth_and_pyramid','median_filter_simple'
         
     ];
       const modesLen = modes.length;
