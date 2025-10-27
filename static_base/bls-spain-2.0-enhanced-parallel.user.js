@@ -50,7 +50,7 @@
             return;
         }
         highlightBoxLabel(label);
-        setTimeout(() => analyzeAndSelectCaptchaImagesParallel(), 300);
+        setTimeout(() => analyzeAndSelectCaptchaImagesParallel(), 600);
     }
 
     function findVisibleBoxLabel() {
