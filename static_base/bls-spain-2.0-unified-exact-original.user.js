@@ -39,7 +39,7 @@
     let trueCaptchaBlockedUntil = 0;
 
     const modes = [
-        'pyramid_upscale','gray_blur_and_pyramid','smooth_and_pyramid','median_filter_simple','pyramid_up','pyramid_upscale','pyramid_up','two_stage_threshold'
+        'pyramid_upscale','smooth_and_pyramid','median_filter_simple','pyramid_up','pyramid_upscale'
     ];
 
     // ============================================
