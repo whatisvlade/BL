@@ -540,7 +540,7 @@
             const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
             if (imagePos === 9) {
-                console.log(`⏭️ Позиция ${imagePos + 1} пропущена.`);
+
                 return;
             }
 
@@ -561,16 +561,16 @@
                         }
                     );
                     let cleanedText = text.replace(/\D/g, '').slice(0, 3);
-                    console.log(`🔍 Tesseract [${modes[index]}]: "${cleanedText}" (${imagePos + 1})`);
+
 
                     if (!cleanedText || cleanedText.startsWith("0") || cleanedText.length < 3) {
-                        console.log(`⚠️ Tesseract не распознал ("${cleanedText}"), пробуем TrueCaptcha...`);
+
                         const trueCaptchaText = await sendCaptchaToTrueCaptcha(processedImageUrl);
                         if (trueCaptchaText) {
                             cleanedText = trueCaptchaText.replace(/\D/g, '').slice(0, 3);
-                            console.log(`🔍 TrueCaptcha: "${cleanedText}" на позиции ${imagePos + 1}`);
+
                         } else {
-                            console.log('⚠️ TrueCaptcha не распознал текст.');
+
                             continue;
                         }
                     }
@@ -578,7 +578,7 @@
                     if (/^\d{3}$/.test(cleanedText) && cleanedText === CURRENT_NUMBER) {
                         await delay(50);
                         selectedElement.click();
-                        console.log(`✅ "${cleanedText}" совпало с CURRENT_NUMBER — кликаем (позиция ${imagePos + 1})`);
+
                         foundValidNumber = true;
                         validRecognizedCount++;
                         recognizedCount++;
@@ -596,11 +596,11 @@
                         if (cleanedText === CURRENT_NUMBER) {
                             await delay(50);
                             selectedElement.click();
-                            console.log(`✅ "${cleanedText}" совпало с CURRENT_NUMBER и распознано 2 раза — кликаем (позиция ${imagePos + 1})`);
+
                             foundValidNumber = true;
                         } else {
                             recognizedCount++;
-                            console.log(`🚫 "${cleanedText}" распознано 2 раза, но не совпадает с CURRENT_NUMBER (${CURRENT_NUMBER}) — ничего не делаем.`);
+
                             selectedElement.style.display = 'none';
                             result.push({ pos: imagePos, value: cleanedText });
                             foundValidNumber = true;
@@ -610,7 +610,7 @@
                         }
                         break;
                     } else {
-                        console.log(`🔸 "${cleanedText}" пока ${resultsCount[cleanedText]} раз(а).`);
+
                     }
                 } catch (err) {
                     console.error(`❌ Ошибка распознавания в режиме ${modes[index]}:`, err);
@@ -618,7 +618,7 @@
             }
 
             if (!foundValidNumber) {
-                console.log(`📌 Позиция ${imagePos + 1} пропущена — не было нужного совпадения. ${uncknownNumber}`);
+
                 uncknownNumber++;
 
                 if (recognizedCount + uncknownNumber === 9) {
@@ -655,26 +655,24 @@
                 }
 
                 const potentialImages = findAllPotentialCaptchaImages(document);
-                console.log(`Найдено ${potentialImages.length} потенциальных изображений`);
+
 
                 const captchaContainer = findCaptchaContainer(document);
-                console.log('Найден контейнер капчи:', captchaContainer);
+
 
                 const visibleImages = potentialImages.filter(item => {
                     return captchaContainer.contains(item.element) && isElementVisible(item.element, document);
                 });
-                console.log(`Найдено ${visibleImages.length} видимых изображений внутри контейнера`);
+
 
                 const uniqueVisibleImages = removeDuplicateElements(visibleImages);
-                console.log(`После удаления дубликатов осталось ${uniqueVisibleImages.length} уникальных изображений`);
+
 
                 const groups = groupCaptchaImages(uniqueVisibleImages);
-                console.log('Группы изображений:', groups);
-                console.log(`Найдено ${groups.potential.length} потенциальных групп с ~9 элементами`);
+
 
                 let filteredImages = uniqueVisibleImages;
                 filteredImages = filterAndRemoveUnnecessaryElements(uniqueVisibleImages, groups, document);
-                console.log(`После фильтрации осталось ${filteredImages.length} элементов`);
 
                 if (groups.potential.length > 0) {
                     groups.potential.forEach((group, index) => {
@@ -785,7 +783,7 @@
             div.style.transition = 'background 0.5s';
             div.style.background = '#ffe0b2';
             setTimeout(() => div.style.background = '', 50);
-            console.log('🟢 CURRENT_NUMBER:', CURRENT_NUMBER);
+
         }
 
         async function analyzeAndSelectCaptchaImagesParallel() {
@@ -831,13 +829,13 @@
                         tessedit_pageseg_mode: 6
                     });
                     let cleanedText = text.replace(/\D/g, '').slice(0, 3);
-                    console.log(`🔍 Режим: ${modes[index]}, Tesseract: "${cleanedText}" (${imagePos + 1})`);
+
 
                     if (!cleanedText || cleanedText.startsWith("0") || cleanedText.length < 3) {
                         const trueCaptchaText = await sendCaptchaToTrueCaptcha(processedImageUrl);
                         if (trueCaptchaText) {
                             cleanedText = trueCaptchaText.replace(/\D/g, '').slice(0, 3);
-                            console.log(`🔍 TrueCaptcha: "${cleanedText}" (${imagePos + 1})`);
+
                         } else {
                             continue;
                         }
@@ -846,7 +844,7 @@
                     if (/^\d{3}$/.test(cleanedText) && cleanedText === CURRENT_NUMBER) {
                         await delay(50);
                         selectedElement.click();
-                        console.log(`✅ "${cleanedText}" совпало — клик (${imagePos + 1})`);
+
                         foundValidNumber = true;
                         validRecognizedCount++;
                         recognizedCount++;
