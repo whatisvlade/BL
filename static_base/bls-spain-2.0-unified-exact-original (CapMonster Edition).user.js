@@ -162,7 +162,7 @@
     let result = [];
 
     const modes = [
-        'pyramid_upscale','pyramid_up','smooth_and_pyramid','median_filter_simple','pyramid_up','pyramid_upscale'
+        'pyramid_upscale','pyramid_up','smooth_and_pyramid','median_filter_simple','pyramid_upscale','smooth_andpyramid','pyramid_up'
     ];
 
     // ============================================
