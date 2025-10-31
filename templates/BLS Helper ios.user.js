@@ -199,7 +199,7 @@
     if (buttons.tryAgainBtn) {
       UI.showMessage('🔁 Clicking: Try Again', '#6c8cd5');
       log('Try Again button found — clicking');
-      setTimeout(() => buttons.tryAgainBtn.click(), 30);
+      setTimeout(() => buttons.tryAgainBtn.click(), 1000);
       return true;
     }
 
@@ -209,7 +209,7 @@
       // Вместо клика по кнопке "Go to home" сразу перенаправляем на целевую страницу
       setTimeout(() => {
         window.location.href = 'https://appointment.blsspainbelarus.by/Global/appointment/newappointment';
-      }, 30);
+      }, 100);
       return true;
     }
 
@@ -258,8 +258,8 @@
         const clicked = await clickTryAgainWithWait(100, 150);
         if (!clicked) {
           UI.showMessage(`🔁 Перезаход №${count}…`, '#6c8cd5');
-          const url = location.pathname + location.search + (location.search ? '&' : '?') + 'r=' + Date.now();
-          location.replace(url);
+          const targetUrl = 'https://appointment.blsspainbelarus.by/Global/appointment/newappointment';
+          location.replace(targetUrl);
         }
       })();
       return true; // инициировали навигацию — дальше init не нужен
@@ -595,18 +595,18 @@
         log(`Warning: Could not get new IP for display: ${e.message}`);
       }
 
-      const reload = (document.getElementById('reloadOnChange')?.checked ?? ls.getReload()) && isAutoTargetPage();
-      setStatus(`✅ Proxy rotated successfully${newIP ? ` (IP: ${newIP})` : ''}${reload ? '. Reloading...' : ''}`, 'success');
-      log(`${trigger}: PROXY ROTATED${newIP ? ` (IP: ${newIP})` : ''}${reload ? ' [reload]' : ''}`);
+       const reloadOnTarget = (document.getElementById('reloadOnChange')?.checked ?? ls.getReload()) && isAutoTargetPage();
+       const reloadOnError = (trigger === 'access-denied' || trigger === 'tmr' || trigger === 'tmr-on-newappointment' || trigger === 'tmr-on-newappointment-late');
+       const reload = reloadOnTarget || reloadOnError;
 
       if (isPendingAppointmentPage()) {
         const bookButton =
           document.querySelector('a.btn.btn-primary[href="/Global/appointment/newappointment"]') ||
           document.querySelector('a.btn.btn-primary[href="/global/appointment/newappointment"]');
         if (bookButton) { log(`Clicking "Book New Appointment"`); setStatus(`✅ Proxy rotated. Clicking "Book New Appointment"...`, 'success'); bookButton.click(); }
-        else if (reload) setTimeout(() => location.reload(), 500);
+        else if (reload) setTimeout(() => location.reload(), 1500);
       } else if (reload) {
-        setTimeout(() => location.reload(), 500);
+        setTimeout(() => location.reload(), 1500);
       }
     } catch (e) {
       setStatus(`❌ Error: ${e.message}`, 'error');
@@ -817,7 +817,7 @@
             p  && /We have detected excessive requests/i.test(p.textContent || '')) {
 
           triggered = true; UI.showMessage('🔄 Too Many Requests — rotating proxy…', '#d35454'); log('TMR (non-target page) detected — rotating...');
-          runCycle('tmr').finally(() => { setTimeout(() => { location.href = 'https://appointment.blsspainbelarus.by/Global/account/Login'; }, 500); });
+          runCycle('tmr').finally(() => { setTimeout(() => { location.href = 'https://appointment.blsspainbelarus.by/Global/account/Login'; }, 1000); });
         }
       }
       if (window.top === window.self) { checkAndHandle(); setInterval(checkAndHandle, 500); }
@@ -908,3 +908,4 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 })();
+
