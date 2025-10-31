@@ -82,7 +82,7 @@
   let isRunning = false;
   let autoNextTimer = null;
   let rotateCallCounter = 0;
-  let railwayAvailable = false; // Изначально неизвестно
+  let railwayAvailable = false;
   let lastWorkingBase = null;
 
   // Анти-дубликаты
@@ -91,7 +91,7 @@
   let lastProxyChanged = false;
 
   // NEW: анти-дубль для TMR на целевой странице
-  let tmrTriggered = false;
+  let tmrTriggered = false; // NEW
 
   // ===== UI helpers =====
   function setStatus(msg, type='info') {
@@ -199,16 +199,17 @@
     if (buttons.tryAgainBtn) {
       UI.showMessage('🔁 Clicking: Try Again', '#6c8cd5');
       log('Try Again button found — clicking');
-      setTimeout(() => buttons.tryAgainBtn.click(), 2000);
+      setTimeout(() => buttons.tryAgainBtn.click(), 30);
       return true;
     }
 
     if (buttons.goHomeBtn) {
       UI.showMessage('🔁 Redirecting to New Appointment page', '#6c8cd5');
       log('Go to home button found — redirecting to New Appointment');
+      // Вместо клика по кнопке "Go to home" сразу перенаправляем на целевую страницу
       setTimeout(() => {
         window.location.href = 'https://appointment.blsspainbelarus.by/Global/appointment/newappointment';
-      }, 2000);
+      }, 30);
       return true;
     }
 
@@ -217,7 +218,7 @@
   }
 
   // NEW: универсальная проверка TMR на странице
-  function isTooManyRequestsPage() {
+  function isTooManyRequestsPage() { // NEW
     const txt = (document.body.innerText || '').toLowerCase();
     const h1  = document.querySelector('h1, .card h1');
     const h1ok = h1 && /too\s+many\s+requests/i.test(h1.textContent || '');
@@ -239,13 +240,14 @@
     // Приоритет: если на целевой странице TMR — сразу ротация
     if (!tmrTriggered && isTooManyRequestsPage()) {
       tmrTriggered = true;
-      setNewApptCount(999);
+      setNewApptCount(999); // «исчерпали лимит»
       UI.showMessage('🚨 Too Many Requests — запускаю ротацию…', '#d35454');
       log('NewAppointment: TMR detected → forcing rotation now');
       runCycle('tmr-on-newappointment').catch(e => log('Rotation error: ' + e.message));
-      return false;
+      return false; // не блокируем остальной init
     }
 
+    // ВЫНОСИМ ОБРАБОТЧИКИ КНОПОК В ОТДЕЛЬНУЮ ФУНКЦИЮ И ВЫЗЫВАЕМ ЕЁ ПЕРЕД ВСЕМИ ПРОВЕРКАМИ
     setupButtonClickHandlers();
 
     const count = incNewApptCount();
@@ -253,12 +255,11 @@
 
     if (count === 1 || count === 2 || count === 3) {
       (async () => {
-        const clicked = await clickTryAgainWithWait(1000, 1500);
+        const clicked = await clickTryAgainWithWait(100, 150);
         if (!clicked) {
           UI.showMessage(`🔁 Перезаход №${count}…`, '#6c8cd5');
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          const targetUrl = 'https://appointment.blsspainbelarus.by/Global/account/login';
-          location.replace(targetUrl);
+          const url = location.pathname + location.search + (location.search ? '&' : '?') + 'r=' + Date.now();
+          location.replace(url);
         }
       })();
       return true; // инициировали навигацию — дальше init не нужен
@@ -285,9 +286,10 @@
         const newCount = incNewApptCount();
         log(`Counter after Go To Home click: ${newCount}`);
 
+        // Проверяем, не достигли ли лимита после клика
         if (newCount >= 4) {
           log('Threshold reached after Go To Home click - preventing navigation and scheduling rotation');
-          e.preventDefault();
+          e.preventDefault(); // предотвращаем переход на главную
           e.stopImmediatePropagation();
 
           setTimeout(() => {
@@ -384,7 +386,6 @@
   }
 
   // ===== Railway connectivity =====
-  // ИЗМЕНЕНО: проверка Railway теперь вызывается только при необходимости
   async function testRailwayConnection() {
     log('🔍 Testing Railway API connectivity...');
     try {
@@ -456,11 +457,6 @@
   async function getPublicIP() {
     log(`🔍 Getting IP via Railway proxy server only (iOS: ${IS_IOS_SAFARI}, IPv4-only: ${ls.getIPv4Only()})...`);
 
-    // ИЗМЕНЕНО: проверяем доступность Railway только если она неизвестна
-    if (railwayAvailable === false) {
-      await testRailwayConnection();
-    }
-
     if (!railwayAvailable) {
       log('⚠️ Railway API недоступен, невозможно получить IP');
       return null;
@@ -505,11 +501,6 @@
 
     rotateInProgress = true;
     try {
-      // ИЗМЕНЕНО: проверяем Railway только при начале ротации
-      if (railwayAvailable === false) {
-        await testRailwayConnection();
-      }
-
       let beforeProxy = null;
       if (railwayAvailable) {
         try {
@@ -549,10 +540,10 @@
       lastProxyChanged = !!(beforeProxy && afterProxy && beforeProxy !== afterProxy);
       if (lastProxyChanged) {
         log(`✅ Proxy changed (server): ${beforeProxy} → ${afterProxy}`);
-        return true;
+        return true; // Прокси сменился - этого достаточно
       } else {
         log(`ℹ️ Proxy unchanged (server or unavailable): before=${beforeProxy} after=${afterProxy}`);
-        return false;
+        return false; // Прокси не сменился
       }
 
     } finally {
@@ -570,13 +561,9 @@
       rotateCallCounter += 1;
       const callId = rotateCallCounter;
       log(`>>> ${trigger}: ВЫЗОВ rotate #${callId}`);
-
-      // ИЗМЕНЕНО: проверяем Railway статус только при запуске цикла ротации
-      if (railwayAvailable === false) {
-        await testRailwayConnection();
-      }
-
       setStatus(`🔄 Ротация #${callId} (Railway: ${railwayAvailable ? 'OK' : 'OFFLINE'})...`, 'info');
+
+
 
       let rounds = 0;
       let rotateSuccess = false;
@@ -614,12 +601,13 @@
       const reload = reloadOnTarget || reloadOnError;
 
       if (isPendingAppointmentPage()) {
-        const specificUrl = "https://appointment.blsspainbelarus.by/Global/account/login";
-        log(`Redirecting to booking page: ${specificUrl}`);
-        setStatus(`✅ Proxy rotated. Redirecting to booking page...`, 'success');
-        window.location.href = specificUrl;
-     } else if (reload) {
-        setTimeout(() => location.reload(), 1500);
+        const bookButton =
+          document.querySelector('a.btn.btn-primary[href="/Global/appointment/newappointment"]') ||
+          document.querySelector('a.btn.btn-primary[href="/global/appointment/newappointment"]');
+        if (bookButton) { log(`Clicking "Book New Appointment"`); setStatus(`✅ Proxy rotated. Clicking "Book New Appointment"...`, 'success'); bookButton.click(); }
+        else if (reload) setTimeout(() => location.reload(), 500);
+      } else if (reload) {
+        setTimeout(() => location.reload(), 500);
       }
     } catch (e) {
       setStatus(`❌ Error: ${e.message}`, 'error');
@@ -630,14 +618,8 @@
     }
   }
 
-
   // ===== Status & Auto =====
   async function refreshCurrent() {
-    // ИЗМЕНЕНО: проверяем Railway только при явном запросе статуса
-    if (railwayAvailable === false) {
-      await testRailwayConnection();
-    }
-
     if (!railwayAvailable) { setCurrentProxyText('Railway недоступен'); return; }
     try {
       setStatus('🔍 Получаю текущий прокси...', 'info');
@@ -646,9 +628,7 @@
       else { setCurrentProxyText('N/A'); setStatus('⚠️ Нет данных о прокси', 'error'); }
     } catch (e) {
       setCurrentProxyText('—'); setStatus(`⚠️ Ошибка: ${e.message}`, 'error');
-      if (e.message.includes('Network error') || e.message.includes('Timeout')) {
-        await testRailwayConnection();
-      }
+      if (e.message.includes('Network error') || e.message.includes('Timeout')) { await testRailwayConnection(); }
     }
   }
 
@@ -683,7 +663,7 @@
     p.style.cssText = `position: fixed; top:10px; right:10px; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; padding:12px; border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,.3); z-index:10000; font:12px/1.4 Arial,sans-serif; min-width:380px; border:2px solid rgba(255,255,255,.2);`;
     const autoBadge = hasErrParam() ? `<span style="margin-left:8px;padding:2px 6px;border-radius:6px;background:#ff7043;">AUTO OFF</span>` : '';
     const iosBadge = IS_IOS_SAFARI ? `<span style="margin-left:8px;padding:2px 6px;border-radius:6px;background:#4CAF50;">iOS</span>` : '';
-    const railwayBadge = `<span id="railwayStatus" style="margin-left:8px;padding:2px 6px;border-radius:6px;background:#9e9e9e;">UNKNOWN</span>`;
+    const railwayBadge = `<span id="railwayStatus" style="margin-left:8px;padding:2px 6px;border-radius:6px;background:${railwayAvailable ? '#4CAF50' : '#f44336'};">${railwayAvailable ? 'ONLINE' : 'OFFLINE'}</span>`;
     p.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
         <div style="font-weight:bold;">🚂 Railway Proxy ${iosBadge}${railwayBadge}${autoBadge}</div>
@@ -816,12 +796,12 @@
   // ===== Init =====
   async function boot() {
     log(`Boot: user=${currentUser}, iOS=${IS_IOS_SAFARI}, Railway=${RAILWAY_HOST}:${RAILWAY_PORT}, IP Check: Proxy Server Only`);
-    // ИЗМЕНЕНО: убрана автоматическая проверка Railway при загрузке
+    await testRailwayConnection();
 
     // РАННИЙ ХУК: 1–4 → Try Again; ≥5 → ротация; NEW: TMR на целевой — немедленная ротация
     if (isNewAppointmentPageStrict()) {
       const handled = handleNewAppointmentAppearance();
-      if (handled) return;
+      if (handled) return; // инициировали навигацию — остальное не запускаем
     }
 
     // TMR detector (вне целевой страницы)
@@ -829,6 +809,7 @@
       let triggered = false;
       async function checkAndHandle() {
         if (triggered) return;
+        // NEW: не вмешиваемся в целевую страницу — там рулит handleNewAppointmentAppearance()
         if (isNewAppointmentPageStrict()) return;
 
         const h1 = document.querySelector('h1');
@@ -837,7 +818,7 @@
             p  && /We have detected excessive requests/i.test(p.textContent || '')) {
 
           triggered = true; UI.showMessage('🔄 Too Many Requests — rotating proxy…', '#d35454'); log('TMR (non-target page) detected — rotating...');
-          runCycle('tmr').finally(() => { setTimeout(() => { location.href = 'https://appointment.blsspainbelarus.by/Global/account/Login'; }, 1500); });
+          runCycle('tmr').finally(() => { setTimeout(() => { location.href = 'https://appointment.blsspainbelarus.by/Global/account/Login'; }, 500); });
         }
       }
       if (window.top === window.self) { checkAndHandle(); setInterval(checkAndHandle, 500); }
@@ -874,7 +855,7 @@
     })();
 
     // NEW: поллер TMR именно на целевой странице (поздняя подгрузка)
-    if (isNewAppointmentPageStrict()) {
+    if (isNewAppointmentPageStrict()) { // NEW
       const iv = setInterval(() => {
         if (tmrTriggered) { clearInterval(iv); return; }
         if (isTooManyRequestsPage()) {
@@ -901,8 +882,9 @@
       log('INIT: triggers active, panel not shown on this page');
     }
   }
-
+  // ДОПОЛНИТЕЛЬНЫЙ ОБРАБОТЧИК В КОНЦЕ boot() ФУНКЦИИ
   function setupGlobalButtonHandlers() {
+    // Вешаем обработчик на весь документ для перехвата кликов
     document.addEventListener('click', function(e) {
       const target = e.target.closest('a.btn.btn-primary[href="/"]');
       if (target) {
@@ -921,7 +903,7 @@
           }, 100);
         }
       }
-    }, true);
+    }, true); // useCapture = true для перехвата на ранней фазе
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
