@@ -197,14 +197,14 @@
     }
 
     if (buttons.tryAgainBtn) {
-      UI.showMessage('🔁 Clicking: Try Again', '#6c8cd5');
+      UI.showMessage('🔁 Clicking: Try Again', '#6c8cd5', 0.5);
       log('Try Again button found — clicking');
       setTimeout(() => buttons.tryAgainBtn.click(), 2000);
       return true;
     }
 
     if (buttons.goHomeBtn) {
-      UI.showMessage('🔁 Redirecting to New Appointment page', '#6c8cd5');
+      UI.showMessage('🔁 Redirecting to New Appointment page', '#6c8cd5', 0.5);
       log('Go to home button found — redirecting to New Appointment');
       setTimeout(() => {
         window.location.href = 'https://appointment.blsspainbelarus.by/Global/appointment/newappointment';
@@ -240,7 +240,7 @@
     if (!tmrTriggered && isTooManyRequestsPage()) {
       tmrTriggered = true;
       setNewApptCount(999);
-      UI.showMessage('🚨 Too Many Requests — запускаю ротацию…', '#d35454');
+      UI.showMessage('🚨 Too Many Requests — запускаю ротацию…', '#6c8cd5', 0.5);
       log('NewAppointment: TMR detected → forcing rotation now');
       runCycle('tmr-on-newappointment').catch(e => log('Rotation error: ' + e.message));
       return false;
@@ -676,68 +676,158 @@
     else { setStatus('⏸️ Auto disabled', 'info'); log('AUTO: disabled'); }
   }
 
-  // ===== UI panel =====
   function createPanel() {
+    // добавим стиль для адаптива и collapsed-поведения
+    if (!document.getElementById('proxy-panel-styles')) {
+      const style = document.createElement('style');
+      style.id = 'proxy-panel-styles';
+      style.textContent = `
+        #proxy-panel { position: fixed; top: 10px; right: 10px; background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); color: #fff;
+                        padding: 12px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,.3); z-index:1110000;
+                        font:12px/1.4 Arial,sans-serif; min-width: 380px; border: 2px solid rgba(255,255,255,.2);
+                        transition: all .22s ease; overflow: visible; }
+        #proxy-panel.collapsed { height:48px; min-width: 220px; overflow: hidden; padding: 8px 12px; }
+        #proxy-panel .panel-inner { transition: opacity .18s ease; }
+        #proxy-panel .header-compact { display:flex; align-items:center; gap:8px; justify-content:space-between; }
+        #proxy-panel .compact-left { display:flex; align-items:center; gap:10px; font-weight:700; font-size:13px; }
+        #proxy-panel .compact-right { display:flex; align-items:center; gap:8px; }
+        #proxy-panel button { outline: none; }
+
+        /* mobile */
+        @media (max-width:520px) {
+        #proxy-panel {
+        left: 10px;
+        right: 10px;
+        top: 10px;    /* <-- сверху */
+        bottom: auto; /* <-- сбрасываем нижний отступ */
+        min-width: auto;
+        width: calc(100% - 20px);
+        }
+        #proxy-panel.collapsed { height:44px; }
+        #proxy-panel { border-radius: 12px; padding: 10px; }
+        #proxy-panel .panel-inner { font-size: 13px; }
+        #proxy-panel .controls-row { flex-direction: column; gap:8px; }
+        #proxy-panel .controls-row button { width:100%; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
     const p = document.createElement('div');
     p.id = 'proxy-panel';
-    p.style.cssText = `position: fixed; top:10px; right:10px; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; padding:12px; border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,.3); z-index:10000; font:12px/1.4 Arial,sans-serif; min-width:380px; border:2px solid rgba(255,255,255,.2);`;
-    const autoBadge = hasErrParam() ? `<span style="margin-left:8px;padding:2px 6px;border-radius:6px;background:#ff7043;">AUTO OFF</span>` : '';
-    const iosBadge = IS_IOS_SAFARI ? `<span style="margin-left:8px;padding:2px 6px;border-radius:6px;background:#4CAF50;">iOS</span>` : '';
-    const railwayBadge = `<span id="railwayStatus" style="margin-left:8px;padding:2px 6px;border-radius:6px;background:#9e9e9e;">UNKNOWN</span>`;
-    p.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
-        <div style="font-weight:bold;">🚂 Railway Proxy ${iosBadge}${railwayBadge}${autoBadge}</div>
-        <div style="opacity:.9;font-size:11px;">${RAILWAY_HOST}:${RAILWAY_PORT}</div>
-      </div>
-      <div style="margin-bottom:6px;">
-  <strong>Пользователь:</strong> <span id="userLabel">${currentUser || 'Не задан'}</span>
-</div>
+    p.className = 'collapsed'; // свёрнута по-умолчанию
 
-<div style="margin-bottom:6px;">
-  <strong>Пароль:</strong> <span id="passLabel">${currentPass || 'Не задан'}</span>
-</div>
-      <div style="margin-bottom:8px;"><strong>Текущий прокси:</strong><div id="currentProxy" style="font-size:11px;color:#ffeb3b;margin-top:3px;">—</div></div>
-      <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
-        <button id="rotateBtn" style="flex:1;padding:8px;background:#4CAF50;color:#fff;border:none;border-radius:6px;cursor:pointer;">🔄 Rotate</button>
-        <button id="refreshBtn" style="flex:1;padding:8px;background:#2196F3;color:#fff;border:none;border-radius:6px;cursor:pointer;">🔍 Status</button>
-        <button id="checkIpBtn" style="flex:1;padding:8px;background:#FF9800;color:#fff;border:none;border-radius:6px;cursor:pointer;">🌐 My IP</button>
-        <button id="testApiBtn" style="flex:1;padding:8px;background:#9C27B0;color:#fff;border:none;border-radius:6px;cursor:pointer;">🔧 Test API</button>
+    p.innerHTML = `
+      <div class="header-compact">
+        <div class="compact-left">
+          <span>🚂 Railway</span>
+          <span id="railwayStatus" style="padding:2px 6px;border-radius:6px;background:#9e9e9e;font-weight:600;font-size:11px;">UNKNOWN</span>
+          <span id="currentProxySmall" style="color:#ffeb3b;font-size:12px;margin-left:8px;">—</span>
+        </div>
+        <div class="compact-right">
+          <button id="panelOpenBtn" style="padding:6px 10px;background:rgba(255,255,255,0.12);color:#fff;border:none;border-radius:6px;cursor:pointer;">➕ Open</button>
+        </div>
       </div>
-      <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
-        <button id="blocklistBtn" style="flex:1;padding:8px;background:#607D8B;color:#fff;border:none;border-radius:6px;cursor:pointer;">🧱 Blocklist</button>
-        <button id="clearBlocklistBtn" style="padding:8px;background:#b00020;color:#fff;border:none;border-radius:6px;cursor:pointer;">🗑 Clear</button>
-        <button id="toggleBtn" style="margin-left:auto;padding:8px;background:#9C27B0;color:#fff;border:none;border-radius:6px;cursor:pointer;">➖ Hide</button>
-      </div>
-      <label style="display:flex;align-items:center;gap:6px;margin-top:4px;">
-        <input id="reloadOnChange" type="checkbox" ${ls.getReload() ? 'checked' : ''}/>
-        <span>♻️ Reload on IP change</span>
-      </label>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-        <label style="display:flex;align-items:center;gap:6px;">
-          <input id="autoSwitch" type="checkbox" ${hasErrParam() ? '' : (ls.getAutoEnabled() ? 'checked' : '')} ${hasErrParam() || !isAutoTargetPage() ? 'disabled' : ''}/>
-          <span>🤖 Auto</span>
+      <div class="panel-inner" id="panelInner" style="margin-top:10px;">
+        <div style="margin-bottom:6px;">
+          <strong>Пользователь:</strong> <span id="userLabel">${currentUser || 'Не задан'}</span>
+        </div>
+        <div style="margin-bottom:6px;">
+          <strong>Пароль:</strong> <span id="passLabel">${currentPass || 'Не задан'}</span>
+        </div>
+        <div style="margin-bottom:8px;"><strong>Текущий прокси:</strong><div id="currentProxy" style="font-size:11px;color:#ffeb3b;margin-top:3px;">—</div></div>
+        <div class="controls-row" style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
+          <button id="rotateBtn" style="flex:1;padding:8px;background:#4CAF50;color:#fff;border:none;border-radius:6px;cursor:pointer;">🔄 Rotate</button>
+          <button id="refreshBtn" style="flex:1;padding:8px;background:#2196F3;color:#fff;border:none;border-radius:6px;cursor:pointer;">🔍 Status</button>
+          <button id="checkIpBtn" style="flex:1;padding:8px;background:#FF9800;color:#fff;border:none;border-radius:6px;cursor:pointer;">🌐 My IP</button>
+          <button id="testApiBtn" style="flex:1;padding:8px;background:#9C27B0;color:#fff;border:none;border-radius:6px;cursor:pointer;">🔧 Test API</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
+          <button id="blocklistBtn" style="flex:1;padding:8px;background:#607D8B;color:#fff;border:none;border-radius:6px;cursor:pointer;">🧱 Blocklist</button>
+          <button id="clearBlocklistBtn" style="padding:8px;background:#b00020;color:#fff;border:none;border-radius:6px;cursor:pointer;">🗑 Clear</button>
+          <button id="toggleBtn" style="margin-left:auto;padding:8px;background:#9C27B0;color:#fff;border:none;border-radius:6px;cursor:pointer;">➖ Hide</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+          <input id="reloadOnChange" type="checkbox" ${ls.getReload() ? 'checked' : ''}/>
+          <span>♻️ Reload on IP change</span>
         </label>
-        <label style="display:flex;align-items:center;gap:6px;">
-          <span>Interval (sec):</span>
-          <input id="autoInterval" type="number" min="10" step="5" style="width:80px;padding:2px;" value="${ls.getAutoInterval()}" ${hasErrParam() || !isAutoTargetPage() ? 'disabled' : ''}>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:6px;">
+            <input id="autoSwitch" type="checkbox" ${hasErrParam() ? '' : (ls.getAutoEnabled() ? 'checked' : '')} ${hasErrParam() || !isAutoTargetPage() ? 'disabled' : ''}/>
+            <span>🤖 Auto</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;">
+            <span>Interval (sec):</span>
+            <input id="autoInterval" type="number" min="10" step="5" style="width:80px;padding:2px;" value="${ls.getAutoInterval()}" ${hasErrParam() || !isAutoTargetPage() ? 'disabled' : ''}>
+          </label>
+          <button id="applyAuto" style="padding:6px 10px;background:#00bcd4;color:#fff;border:none;border-radius:6px;cursor:pointer;" ${hasErrParam() || !isAutoTargetPage() ? 'disabled' : ''}>Apply</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+          <input id="ipv4Only" type="checkbox" ${ls.getIPv4Only() ? 'checked' : ''}/>
+          <span>⚙️ IPv4 only (iOS fix)</span>
         </label>
-        <button id="applyAuto" style="padding:6px 10px;background:#00bcd4;color:#fff;border:none;border-radius:6px;cursor:pointer;" ${hasErrParam() || !isAutoTargetPage() ? 'disabled' : ''}>Apply</button>
+        <div id="statusDiv" style="margin-top:10px;font-size:11px;color:#E8F5E9;"></div>
+        <div style="margin-top:8px; max-height:160px; overflow:auto; background:rgba(0,0,0,.15); padding:6px; border-radius:8px;">
+          <div style="font-weight:bold;opacity:.9;margin-bottom:4px;">📜 Log</div>
+          <div id="logDiv" style="font-family:monospace; font-size:11px; white-space:pre-wrap;"></div>
+        </div>
+        <div style="margin-top:6px;font-size:10px;opacity:.8;">IP Detection: Railway Proxy Server Only (/myip endpoint)</div>
       </div>
-      <label style="display:flex;align-items:center;gap:6px;margin-top:8px;">
-        <input id="ipv4Only" type="checkbox" ${ls.getIPv4Only() ? 'checked' : ''}/>
-        <span>⚙️ IPv4 only (iOS fix)</span>
-      </label>
-      <div id="statusDiv" style="margin-top:10px;font-size:11px;color:#E8F5E9;"></div>
-      <div style="margin-top:8px; max-height:160px; overflow:auto; background:rgba(0,0,0,.15); padding:6px; border-radius:8px;">
-        <div style="font-weight:bold;opacity:.9;margin-bottom:4px;">📜 Log</div>
-        <div id="logDiv" style="font-family:monospace; font-size:11px; white-space:pre-wrap;"></div>
-      </div>
-      <div style="margin-top:6px;font-size:10px;opacity:.8;">IP Detection: Railway Proxy Server Only (/myip endpoint)</div>
     `;
     document.body.appendChild(p);
 
+    // Установка изначального вида: скрыть содержимое при collapsed
+    const panelInner = document.getElementById('panelInner');
+    if (p.classList.contains('collapsed')) panelInner.style.opacity = '0';
+
     if (hasErrParam() && isPendingAppointmentPage()) setStatus('⛔ Auto disabled: PendingAppointment with err param', 'error');
   }
+
+  // делегированная обработка кликов для panelOpenBtn и toggleBtn — работает независимо от порядка создания элементов
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#panelOpenBtn, #toggleBtn');
+    if (!btn) return;
+
+    const panel = document.getElementById('proxy-panel');
+    const inner = document.getElementById('panelInner');
+    const openBtn = document.getElementById('panelOpenBtn');
+    const toggleBtn = document.getElementById('toggleBtn');
+
+    // handler для кнопки Open (в header-compact)
+    if (btn.id === 'panelOpenBtn') {
+      if (!panel) return;
+      if (panel.classList.contains('collapsed')) {
+        panel.classList.remove('collapsed');
+        panel.style.height = 'auto';
+        if (inner) inner.style.opacity = '1';
+        if (openBtn) openBtn.textContent = '➖ Close';
+        if (toggleBtn) toggleBtn.textContent = '➖ Hide';
+      } else {
+        panel.classList.add('collapsed');
+        if (inner) inner.style.opacity = '0';
+        panel.style.height = '';
+        if (openBtn) openBtn.textContent = '➕ Open';
+        if (toggleBtn) toggleBtn.textContent = '➕ Show';
+      }
+      return;
+    }
+
+    // handler для кнопки toggle внутри полной панели
+    if (btn.id === 'toggleBtn') {
+      if (!panel) return;
+      if (panel.classList.contains('collapsed')) {
+        panel.classList.remove('collapsed');
+        if (inner) inner.style.opacity = '1';
+        if (toggleBtn) toggleBtn.textContent = '➖ Hide';
+        if (openBtn) openBtn.textContent = '➖ Close';
+      } else {
+        panel.classList.add('collapsed');
+        if (inner) inner.style.opacity = '0';
+        if (toggleBtn) toggleBtn.textContent = '➕ Show';
+        if (openBtn) openBtn.textContent = '➕ Open';
+      }
+    }
+  }, false);
 
   function showBlocklistModal() {
     const wrapper = document.createElement('div');
@@ -836,7 +926,7 @@
         if (h1 && /Too\s+Many\s+Requests/i.test(h1.textContent || '') &&
             p  && /We have detected excessive requests/i.test(p.textContent || '')) {
 
-          triggered = true; UI.showMessage('🔄 Too Many Requests — rotating proxy…', '#d35454'); log('TMR (non-target page) detected — rotating...');
+          triggered = true; UI.showMessage('🔄 Too Many Requests — rotating proxy…', '#d35454', 0.5); log('TMR (non-target page) detected — rotating...');
           runCycle('tmr').finally(() => { setTimeout(() => { location.href = 'https://appointment.blsspainbelarus.by/Global/account/Login'; }, 1500); });
         }
       }
@@ -860,7 +950,7 @@
       async function handle() {
         if (triggered) return; if (!isAccessDeniedPage()) return; triggered = true;
         try {
-          UI.showMessage('⛔ Access Denied — blocking IP and rotating…', '#d32f2f'); log('Access Denied detected — blocking and rotating...');
+          UI.showMessage('⛔ Access Denied — blocking IP and rotating…', '#d35454', 0.5); log('Access Denied detected — blocking and rotating...');
           let currentProxy = null;
           if (railwayAvailable) {
             try { const data = await callAPI('/current'); currentProxy = data.fullProxy; if (currentProxy) log(`Current proxy: ${currentProxy}`); } catch (e) { log(`Error getting current proxy: ${e.message}`); }
@@ -880,7 +970,7 @@
         if (isTooManyRequestsPage()) {
           tmrTriggered = true;
           setNewApptCount(999);
-          UI.showMessage('🚨 Too Many Requests — запускаю ротацию…', '#d35454');
+          UI.showMessage('🚨 Too Many Requests — запускаю ротацию…', '#d35454', 0.5);
           log('TMR late-detected on NewAppointment → rotating');
           runCycle('tmr-on-newappointment-late').catch(e => log('Rotation error: ' + e.message));
           clearInterval(iv);
