@@ -251,7 +251,7 @@
     const count = incNewApptCount();
     log(`NewAppointment seen #${count}`);
 
-    if (count === 1 || count === 2 || count === 3) {
+    if (count === 1 || count === 2) {
       (async () => {
         const clicked = await clickTryAgainWithWait(1000, 1500);
         if (!clicked) {
@@ -264,7 +264,7 @@
       return true; // инициировали навигацию — дальше init не нужен
     }
 
-    if (count >= 4) {
+    if (count >= 3) {
       log('NewAppointment threshold → starting rotation and resetting counter');
       setNewApptCount(0);
       runCycle('newappointment-threshold').catch(e => log('Rotation error: ' + e.message));
@@ -285,7 +285,7 @@
         const newCount = incNewApptCount();
         log(`Counter after Go To Home click: ${newCount}`);
 
-        if (newCount >= 4) {
+        if (newCount >= 3) {
           log('Threshold reached after Go To Home click - preventing navigation and scheduling rotation');
           e.preventDefault();
           e.stopImmediatePropagation();
