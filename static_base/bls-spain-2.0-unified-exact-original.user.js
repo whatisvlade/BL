@@ -39,9 +39,8 @@
     let trueCaptchaBlockedUntil = 0;
 
     const modes = [
-               'pyramid_upscale','gray_blur_and_pyramid','smooth_and_pyramid','median_filter_simple','pyramid_up','pyramid_upscale','pyramid_up','pyramid_upscale','gray_blur_and_pyramid','smooth_and_pyramid','median_filter_simple','pyramid_up','pyramid_upscale','pyramid_up'
-
-    ];
+          'pyramid_upscale','gray_and_gaussian_blur_with_normalization','pyramid_up','pyramid_upscale','smooth_and_pyramid','smooth_and_pyramid','median_filter_simple','pyramid_up','smooth_and_pyramid','gray_and_gaussian_blur_with_normalization','smooth_and_pyramid','median_filter_simple'
+     ];
 
     // ============================================
     // ОБЩИЕ ФУНКЦИИ
@@ -95,6 +94,10 @@
                       canvas = document.createElement('canvas');
                 try {
                     switch (mode) {
+                       case 'original':
+                            cv.imshow(canvas, mat);
+                            resolve(canvas.toDataURL());
+                            return;
 
                         // --- УНИКАЛЬНЫЕ (pyramid + уникальные переменные) ---
                         case 'gray_and_median_blur_with_normalization':
