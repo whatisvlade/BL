@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         bls-spain-2.0-unified-exact-original
 // @namespace    http://tampermonkey.net/
-// @version      2025-10-29-v6-parallel
-// @description  Параллельное распознавание для всех капч
+// @version      2025-10-29-v5
+// @description  ТОЧНАЯ копия оригинальной логики поиска картинок
 // @author       You
 // @match        https://appointment.blsspainbelarus.by/Global/Appointment/AppointmentCaptcha*
 // @match        https://appointment.blsspainbelarus.by/Global/appointment/appointmentcaptcha*
@@ -39,8 +39,11 @@
     let trueCaptchaBlockedUntil = 0;
 
     const modes = [
-          'pyramid_upscale','gray_and_gaussian_blur_with_normalization','pyramid_up','pyramid_upscale','smooth_and_pyramid','smooth_and_pyramid','median_filter_simple','pyramid_up','smooth_and_pyramid','gray_and_gaussian_blur_with_normalization','smooth_and_pyramid','median_filter_simple'
-     ];
+              'pyramid_upscale','gray_blur_and_pyramid','smooth_and_pyramid','median_filter_simple','pyramid_up','pyramid_upscale','pyramid_up','pyramid_upscale','gray_blur_and_pyramid','smooth_and_pyramid','median_filter_simple','pyramid_up','pyramid_upscale','pyramid_up'
+
+
+
+    ];
 
     // ============================================
     // ОБЩИЕ ФУНКЦИИ
@@ -89,17 +92,11 @@
             img.crossOrigin = "Anonymous";
             img.src = imageUrl;
             img.onload = () => {
-                const mat = cv.imread(img),
-                      gray = new cv.Mat(),
-                      canvas = document.createElement('canvas');
+                const mat = cv.imread(img);
+                const gray = new cv.Mat();
+                const canvas = document.createElement('canvas');
                 try {
                     switch (mode) {
-                       case 'original':
-                            cv.imshow(canvas, mat);
-                            resolve(canvas.toDataURL());
-                            return;
-
-                        // --- УНИКАЛЬНЫЕ (pyramid + уникальные переменные) ---
                         case 'gray_and_median_blur_with_normalization':
                             cv.cvtColor(mat, gray, cv.COLOR_RGBA2GRAY);
                             cv.medianBlur(gray, gray, 3);
@@ -384,33 +381,30 @@
                             cv.normalize(pyrUpMat1, pyrUpMat1, 0, 255, cv.NORM_MINMAX);
                             cv.imshow(canvas, pyrUpMat1); pyrDownMat1.delete(); pyrUpMat1.delete();
                             resolve(canvas.toDataURL()); return;
-                         default:
-                            throw new Error('Неизвестный режим');
+                        default:
+                            cv.cvtColor(mat, gray, cv.COLOR_RGBA2GRAY);
+                            cv.imshow(canvas, gray);
                     }
-
-                } catch (error) {
-                    console.error('Ошибка обработки изображения:', error);
-                    reject(error);
-                } finally {
                     gray.delete();
                     mat.delete();
+                    resolve(canvas.toDataURL());
+                } catch (error) {
+                    console.error('OpenCV error:', error);
+                    gray.delete();
+                    mat.delete();
+                    reject(error);
                 }
             };
-
-            img.onerror = (error) => {
-                console.error('Ошибка загрузки изображения:', error);
-                reject(new Error('Не удалось загрузить изображение'));
-            };
+            img.onerror = (error) => reject(new Error('Image load failed'));
         });
     }
 
-
     // ============================================
-    // СКРИПТ 1: AppointmentCaptcha (ПАРАЛЛЕЛЬНЫЙ)
+    // СКРИПТ 1: AppointmentCaptcha (100% ОРИГИНАЛ)
     // ============================================
 
     if (isAppointmentCaptcha) {
-        console.log('🔵 Запуск логики AppointmentCaptcha (PARALLEL)');
+        console.log('🔵 Запуск логики AppointmentCaptcha');
 
         $(document).ready(function () {
             waitForLoadingMaskToDisappear(() => {
@@ -426,6 +420,8 @@
                 const capchaContainer = document.querySelector('.main-div-container');
                 const preloader = document.querySelector('.preloader');
                 const preloaderStyle = preloader ? preloader.getAttribute('style') : null;
+
+                console.log(`⏳ Проверка: loadingMask=${!!loadingMask}, container=${!!capchaContainer}, preloaderStyle=${preloaderStyle}`);
 
                 if (!loadingMask && capchaContainer && preloaderStyle) {
                     clearInterval(interval);
@@ -467,6 +463,7 @@
             }
         }
 
+        // ТОЧНАЯ КОПИЯ из оригинала
         function isElementVisible(element, doc) {
             if (!element) return false;
 
@@ -743,6 +740,27 @@
             return visibleImages;
         }
 
+        function selectCaptchaImageByIndex(doc, elements, index) {
+            if (index < 0 || index >= elements.length) {
+                console.error(`Индекс ${index} выходит за пределы массива элементов (0-${elements.length - 1})`);
+                return null;
+            }
+
+            try {
+                const selectedElement = elements[index].element;
+                console.log(`Проверяется элемент #${index + 1}: ${elements[index].id || elements[index].classes || 'без идентификатора'}`);
+
+                const imageUrl = selectedElement.src || selectedElement.style.backgroundImage.slice(5, -2);
+                console.log(`URL изображения: ${imageUrl}`);
+
+                recognizeCaptchaText(imageUrl, index, selectedElement, doc);
+                return elements[index];
+            } catch (error) {
+                console.error(`Ошибка при выборе элемента #${index + 1}: ${error.message}`);
+                return null;
+            }
+        }
+
         function clickSubmitButton(doc) {
             if (submitClicked) {
                 console.log('⛔ Кнопка Submit уже была нажата, повторный клик отменён.');
@@ -759,11 +777,14 @@
             }
         }
 
-        // ПАРАЛЛЕЛЬНОЕ РАСПОЗНАВАНИЕ для AppointmentCaptcha
-        async function recognizeCaptchaTextParallel(imageUrl, imagePos, selectedElement, doc) {
+        async function recognizeCaptchaText(imageUrl, imagePos, selectedElement, doc) {
+            console.log(CURRENT_NUMBER + '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
             const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-            if (imagePos === 9) return;
+            if (imagePos === 9) {
+
+                return;
+            }
 
             const originalImageUrl = imageUrl;
             let foundValidNumber = false;
@@ -783,11 +804,15 @@
                     );
                     let cleanedText = text.replace(/\D/g, '').slice(0, 3);
 
+
                     if (!cleanedText || cleanedText.startsWith("0") || cleanedText.length < 3) {
+
                         const trueCaptchaText = await sendCaptchaToTrueCaptcha(processedImageUrl);
                         if (trueCaptchaText) {
                             cleanedText = trueCaptchaText.replace(/\D/g, '').slice(0, 3);
+
                         } else {
+
                             continue;
                         }
                     }
@@ -813,9 +838,11 @@
                         if (cleanedText === CURRENT_NUMBER) {
                             await delay(50);
                             selectedElement.click();
+
                             foundValidNumber = true;
                         } else {
                             recognizedCount++;
+
                             selectedElement.style.display = 'none';
                             result.push({ pos: imagePos, value: cleanedText });
                             foundValidNumber = true;
@@ -824,6 +851,8 @@
                             }
                         }
                         break;
+                    } else {
+
                     }
                 } catch (err) {
                     console.error(`❌ Ошибка распознавания в режиме ${modes[index]}:`, err);
@@ -831,6 +860,7 @@
             }
 
             if (!foundValidNumber) {
+
                 uncknownNumber++;
 
                 if (recognizedCount + uncknownNumber === 9) {
@@ -847,11 +877,10 @@
             }
         }
 
-        async function startAnalizeAndSelectCaptchaImagesParallel(doc, elements) {
-            // ПАРАЛЛЕЛЬНЫЙ запуск всех распознаваний
-            await Promise.all(elements.map((item, index) =>
-                recognizeCaptchaTextParallel(item.src, index, item.element, doc)
-            ));
+        function startAnalizeAndSelectCaptchaImages(doc, elements) {
+            elements.forEach((item, index) => {
+                selectCaptchaImageByIndex(doc, elements, index);
+            });
         }
 
         function analyzeAndSelectCaptchaImages(isFirstAnalyze) {
@@ -868,24 +897,32 @@
                 }
 
                 const potentialImages = findAllPotentialCaptchaImages(document);
+
+
                 const captchaContainer = findCaptchaContainer(document);
+
+
                 const visibleImages = potentialImages.filter(item => {
                     return captchaContainer.contains(item.element) && isElementVisible(item.element, document);
                 });
 
+
                 const uniqueVisibleImages = removeDuplicateElements(visibleImages);
+
+
                 const groups = groupCaptchaImages(uniqueVisibleImages);
+
 
                 let filteredImages = uniqueVisibleImages;
                 filteredImages = filterAndRemoveUnnecessaryElements(uniqueVisibleImages, groups, document);
 
                 if (groups.potential.length > 0) {
                     groups.potential.forEach((group, index) => {
-                        startAnalizeAndSelectCaptchaImagesParallel(document, group.elements);
+                        startAnalizeAndSelectCaptchaImages(document, group.elements);
                     });
                 } else {
                     alert('Не найдено потенциальных групп с ~9 элементами');
-                    startAnalizeAndSelectCaptchaImagesParallel(document, filteredImages);
+                    startAnalizeAndSelectCaptchaImages(document, filteredImages);
                 }
 
                 return {
@@ -946,8 +983,9 @@
     }
 
     // ============================================
-    // СКРИПТ 2: LoginCaptcha (уже параллельный)
+    // СКРИПТ 2: LoginCaptcha (без изменений)
     // ============================================
+
 
     if (isLoginCaptcha) {
         console.log('🟠 Запуск логики LoginCaptcha (parallel)');
@@ -956,7 +994,7 @@
             if (document.querySelectorAll('.box-label').length) {
                 run();
             } else {
-                setTimeout(start, 100);
+                setTimeout(start, 500);
             }
         }
 
@@ -987,6 +1025,7 @@
             div.style.transition = 'background 0.5s';
             div.style.background = '#ffe0b2';
             setTimeout(() => div.style.background = '', 50);
+
         }
 
         async function analyzeAndSelectCaptchaImagesParallel() {
@@ -1001,7 +1040,7 @@
             });
             if (!visible.length) return;
             const unique = removeDuplicateElements2(visible);
-            await Promise.all(unique.map((item, i) => recognizeCaptchaTextParallel2(item.src, item.element, i)));
+            await Promise.all(unique.map((item, i) => recognizeCaptchaTextParallel(item.src, item.element, i)));
             if (!submitClicked && validRecognizedCount === 2 && unique.length === 9) {
                 const remaining = unique.find(item => item.element.style.display !== 'none');
                 if (remaining) {
@@ -1017,7 +1056,7 @@
             }, 500);
         }
 
-        async function recognizeCaptchaTextParallel2(imageUrl, selectedElement, imagePos) {
+        async function recognizeCaptchaTextParallel(imageUrl, selectedElement, imagePos) {
             const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
             if (imagePos === 9) return;
             const originalImageUrl = imageUrl;
@@ -1033,10 +1072,12 @@
                     });
                     let cleanedText = text.replace(/\D/g, '').slice(0, 3);
 
+
                     if (!cleanedText || cleanedText.startsWith("0") || cleanedText.length < 3) {
                         const trueCaptchaText = await sendCaptchaToTrueCaptcha(processedImageUrl);
                         if (trueCaptchaText) {
                             cleanedText = trueCaptchaText.replace(/\D/g, '').slice(0, 3);
+
                         } else {
                             continue;
                         }
